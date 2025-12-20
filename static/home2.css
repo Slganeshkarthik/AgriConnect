@@ -376,6 +376,22 @@ body {
   border-color: #2563eb;
 }
 
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  min-height: 160px;
+  padding: 40px 16px;
+  border: 2px dashed #d1d5db;
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--muted);
+  font-weight: 600;
+  margin: 20px 0;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .grid {
