@@ -90,13 +90,15 @@
     </div>
     <!-- CATEGORY FILTER -->
     <div class="categories" id="categoryBar">
-      <button class="cat-btn" data-cat="all">All</button>
-      <button class="cat-btn" data-cat="Dairy">Dairy</button>
+      <button class="cat-btn active" data-cat="all">All</button>
+      <button class="cat-btn" data-cat="Vegetables">Vegetables</button>
       <button class="cat-btn" data-cat="Fruits">Fruits</button>
-      <button class="cat-btn" data-cat="Vegetable">Vegetables</button>
       <button class="cat-btn" data-cat="Grains">Grains</button>
-      <button class="cat-btn" data-cat="Poultry">Pulses</button>
-      <button class="cat-btn" data-cat="Poultry">Poultry</button>
+      <button class="cat-btn" data-cat="Dairy">Dairy</button>
+      <button class="cat-btn" data-cat="Pulses">Pulses</button>
+      <button class="cat-btn" data-cat="Spices">Spices</button>
+      <button class="cat-btn" data-cat="Organic">Organic Products</button>
+      <button class="cat-btn" data-cat="Others">Others</button>
     </div>
 
     <section class="grid" id="grid"></section>
@@ -131,6 +133,8 @@ function startChat(){
 
 // ---------- Product Cards ----------
 function productCard(p){
+  const producerName = p.farmer || p.seller || p.seller_name || p.seller_username || "Local farm";
+  const originLabel = p.location || p.origin || "Nearby farmer";
   const div = document.createElement("article");
   div.className = "card";
   div.style.cursor = 'pointer';
@@ -141,7 +145,7 @@ function productCard(p){
     <img class="thumb" src="${p.image || 'https://via.placeholder.com/600x450'}" alt="${p.name}"/>
     <div class="card-body">
       <div class="name">${p.name}</div>
-      <div class="meta">by ${p.farmer} • ${p.location}</div>
+      <div class="meta">by ${producerName} • ${originLabel}</div>
       <div class="row">
         <div class="price">${currency(p.price)}</div>
         <div class="meta">/ ${p.unit}</div>

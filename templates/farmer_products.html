@@ -749,7 +749,7 @@
           <h3>${product.name}</h3>
           <div class="product-info"><strong>Category:</strong> ${product.category}</div>
           <div class="product-info"><strong>Price:</strong> ₹${product.price}/${product.unit}</div>
-          <div class="product-info"><strong>Stock:</strong> <span class="badge ${product.stock < 10 ? 'badge-danger' : product.stock < 50 ? 'badge-warning' : 'badge-success'}">${product.stock} ${product.unit}</span></div>
+          <div class="product-info"><strong>Stock:</strong> <span class="badge ${product.stock < 10 ? 'badge-danger' : product.stock < 50 ? 'badge-warning' : 'badge-success'}">${product.stock} </span></div>
           ${product.description ? `<div class="product-info" style="margin-top:10px;">${product.description}</div>` : ''}
           <div class="product-actions">
             <button class="btn btn-primary btn-sm" onclick="editProduct('${product.product_id}')">✏️ Edit</button>

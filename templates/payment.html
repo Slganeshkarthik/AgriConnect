@@ -496,6 +496,8 @@
       </div>
     </div>
 
+    
+
     <!-- Order Summary -->
     <div class="order-summary">
       <h2><i class="fas fa-receipt"></i> Order Summary</h2>
@@ -507,6 +509,10 @@
         <span><i class="fas fa-truck"></i> Delivery Charges:</span>
         <span id="delivery">₹50.00</span>
       </div>
+      <div class="summary-row" id="discountRow" style="display:none; color:#10b981; font-weight:600;">
+        <span><i class="fas fa-tags"></i> Discount:</span>
+        <span id="discountAmount">-₹0.00</span>
+      </div>
       <div class="summary-row total">
         <span><strong><i class="fas fa-rupee-sign"></i> Total Amount:</strong></span>
         <span id="total"><strong>₹50.00</strong></span>
@@ -514,6 +520,25 @@
       <button class="proceed-btn" onclick="proceedPayment()">
         <i class="fas fa-lock"></i> Proceed to Pay Securely
       </button>
+      <!-- Coupon Section -->
+      <div class="summary-row" style="flex-direction: column; gap: 10px;">
+        <label style="font-weight:600;">🎟 Apply Coupon</label>
+        <div style="display:flex; gap:10px;">
+          <input 
+            type="text" 
+            id="couponCode" 
+            placeholder="Enter coupon code"
+            style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;"
+          />
+          <button 
+            onclick="applyCoupon()" 
+            style="padding:10px 15px; border:none; border-radius:8px; background:#667eea; color:white; font-weight:600; cursor:pointer;">
+            Apply
+          </button>
+        </div>
+        <small id="couponMsg" style="color:green; font-weight:600;"></small>
+      </div>
+
       <div class="secure-badge">
         <i class="fas fa-shield-alt"></i>
         <span>100% Secure Payment</span>
@@ -817,6 +842,9 @@
           ev.stopPropagation();
         });
       });
+      discountAmount = 0;
+      appliedCoupon = null;
+      document.getElementById("discountRow").style.display = "none";
     });
 
     // Add CSS animations
@@ -845,6 +873,67 @@
       }
     `;
     document.head.appendChild(style);
+    let discountAmount = 0;
+    let appliedCoupon = null;
+
+    function applyCoupon() {
+      const code = document.getElementById("couponCode").value.trim().toUpperCase();
+      const msg = document.getElementById("couponMsg");
+
+      const subtotal = parseFloat(
+        document.getElementById("subtotal").textContent.replace("₹", "")
+      );
+
+      const delivery =
+        document.getElementById("delivery").textContent === "FREE"
+          ? 0
+          : parseFloat(document.getElementById("delivery").textContent.replace("₹", ""));
+
+      discountAmount = 0;
+      appliedCoupon = null;
+
+      /* ---------------- COUPON DEFINITIONS ---------------- */
+      if (code === "SAVE10") {
+        // 10% discount
+        discountAmount = subtotal * 0.10;
+        appliedCoupon = "10% OFF";
+      } 
+      else if (code === "SAVE20") {
+        // 20% discount with max cap
+        discountAmount = subtotal * 0.20;
+        discountAmount = Math.min(discountAmount, 200); // Max ₹200
+        appliedCoupon = "20% OFF (Max ₹200)";
+      } 
+      else if (code === "FLAT50") {
+        // Flat ₹50 off
+        discountAmount = 50;
+        appliedCoupon = "₹50 OFF";
+      } 
+      else {
+        msg.style.color = "red";
+        msg.textContent = "Invalid coupon code ❌";
+        document.getElementById("discountRow").style.display = "none";
+        updateTotal(subtotal, delivery, 0);
+        return;
+      }
+
+      /* ---------------- APPLY DISCOUNT ---------------- */
+      let newTotal = subtotal + delivery - discountAmount;
+      if (newTotal < 0) newTotal = 0;
+
+      document.getElementById("discountRow").style.display = "flex";
+      document.getElementById("discountAmount").textContent =
+        "-₹" + discountAmount.toFixed(2);
+
+      document.getElementById("total").textContent =
+        "₹" + newTotal.toFixed(2);
+
+      orderAmount = newTotal;
+
+      msg.style.color = "green";
+      msg.textContent = `Coupon Applied: ${appliedCoupon} 🎉`;
+    }
+
   </script>
 </body>
 </html>
