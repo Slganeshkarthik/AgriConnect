@@ -98,9 +98,8 @@
       <button class="cat-btn" data-cat="Pulses">Pulses</button>
       <button class="cat-btn" data-cat="Spices">Spices</button>
       <button class="cat-btn" data-cat="Organic">Organic Products</button>
-      <button class="cat-btn" data-cat="Others">Others</button>
+      <button class="cat-btn" data-cat="Others">Others</button> 
     </div>
-
     <section class="grid" id="grid"></section>
 
   </main>
@@ -197,6 +196,12 @@ function render(products){
   grid.innerHTML = "";
   scroller.innerHTML = "";
   ticker.innerHTML = "";
+
+  if (!products.length) {
+    grid.innerHTML = '<div class="empty-state">No products available</div>';
+    document.getElementById("count").textContent = "0 items";
+    return;
+  }
 
   products.forEach(p => {
     grid.appendChild(productCard(p));
