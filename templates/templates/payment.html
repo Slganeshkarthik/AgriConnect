@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Payment - AgriConnect</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='payment.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Dummy Payment System - No external payment gateway -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding-bottom: 50px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 30px;
+    }
+
+    .payment-section {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .section-title {
+      font-size: 2em;
+      margin-bottom: 30px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .section-title i {
+      color: #667eea;
+    }
+
+    .demo-banner {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+      border: 2px solid #ffc107;
+      padding: 15px;
+      margin-bottom: 30px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 600;
+      color: #856404;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .payment-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .payment-option {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border: 3px solid transparent;
+      border-radius: 15px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .payment-option::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .payment-option:hover::before {
+      left: 100%;
+    }
+
+    .payment-option:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+      border-color: #667eea;
+    }
+
+    .payment-option.selected {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+      transform: scale(1.02);
+    }
+
+    .payment-option.selected .payment-header h3,
+    .payment-option.selected .payment-desc {
+      color: white;
+    }
+
+    .payment-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .payment-header input[type="radio"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      accent-color: #667eea;
+    }
+
+    .payment-header h3 {
+      font-size: 1.5em;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .payment-desc {
+      color: #666;
+      margin-left: 39px;
+      font-size: 0.95em;
+    }
+
+    .payment-details {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 12px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 15px;
+    }
+
+    .verify-btn {
+      margin-top: 10px;
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .verify-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .payment-note {
+      color: #28a745;
+      margin: 5px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .order-summary {
+      background: white;
+      border-radius: 20px;
+      padding: 35px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+
+    .order-summary h2 {
+      font-size: 1.8em;
+      margin-bottom: 25px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 1.1em;
+    }
+
+    .summary-row.total {
+      border-bottom: none;
+      border-top: 3px solid #667eea;
+      margin-top: 15px;
+      padding-top: 20px;
+      font-size: 1.3em;
+      color: #667eea;
+    }
+
+    .proceed-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.2em;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 25px;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+    }
+
+    .proceed-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(40, 167, 69, 0.5);
+    }
+
+    .proceed-btn:active {
+      transform: translateY(-1px);
+    }
+
+    .secure-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+      color: #28a745;
+      font-size: 0.95em;
+    }
+
+    .secure-badge i {
+      font-size: 1.2em;
+    }
+
+    @media (max-width: 1024px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+
+      .order-summary {
+        position: static;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .payment-section,
+      .order-summary {
+        padding: 25px;
+      }
+
+      .section-title {
+        font-size: 1.5em;
+      }
+
+      .payment-header h3 {
+        font-size: 1.2em;
+      }
+    }
+
+    /* Loading Animation */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loader {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #667eea;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+    <div class="actions">
+      {% if user %}
+        <button class="iconbtn" onclick="window.location.href='/profile.html'" title="Profile">
+          👤 <span class="username-text">{{ user.name or user.username }}</span>
+        </button>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>  
+  
+  <div class="container">
+    <div class="payment-section">
+      <div class="demo-banner">
+        <i class="fas fa-exclamation-triangle"></i> <strong>DEMO MODE</strong> - This is a dummy payment system for testing purposes. No real transactions will be processed.
+      </div>
+      
+      <h1 class="section-title">
+        <i class="fas fa-wallet"></i>
+        Select Payment Method
+      </h1>
+    
+      <div class="payment-methods">
+        <!-- Cash on Delivery -->
+        <div class="payment-option" id="COD" onclick="selectPayment('COD')">
+          <div class="payment-header">
+            <input type="radio" name="payment" id="cod-radio" value="COD">
+            <label for="cod-radio">
+              <h3>💵 Cash on Delivery</h3>
+            </label>
+          </div>
+          <p class="payment-desc">Pay with cash when your order is delivered to your doorstep.</p>
+          <div class="payment-details" id="cod-details" style="display: none;">
+            <p class="payment-note"><i class="fas fa-check-circle"></i> No advance payment required</p>
+            <p class="payment-note"><i class="fas fa-check-circle"></i> Pay directly to delivery agent</p>
+            <p class="payment-note"><i class="fas fa-check-circle"></i> Available for all locations</p>
+          </div>
+        </div>
+
+        <!-- UPI Payment -->
+        <div class="payment-option" id="UPI" onclick="selectPayment('UPI')">
+          <div class="payment-header">
+            <input type="radio" name="payment" id="upi-radio" value="UPI">
+            <label for="upi-radio">
+              <h3>📱 UPI Payment</h3>
+            </label>
+          </div>
+          <p class="payment-desc">Pay instantly using UPI apps like Google Pay, PhonePe, Paytm, etc.</p>
+          <div class="payment-details" id="upi-details" style="display: none;">
+            <div class="input-group">
+              <label for="upi-id"><i class="fas fa-mobile-alt"></i> Enter your UPI ID:</label>
+              <input type="text" id="upi-id" placeholder="yourname@paytm" class="upi-input">
+              <button class="verify-btn" onclick="verifyUPI(event)">
+                <i class="fas fa-check"></i> Verify UPI ID
+              </button>
+            </div>
+            <p class="payment-note"><i class="fas fa-check-circle"></i> Instant payment confirmation</p>
+            <p class="payment-note"><i class="fas fa-check-circle"></i> Secure & encrypted transaction</p>
+          </div>
+        </div>
+
+        <!-- Debit/Credit Card -->
+        <div class="payment-option" id="CARD" onclick="selectPayment('CARD')">
+          <div class="payment-header">
+            <input type="radio" name="payment" id="card-radio" value="CARD">
+            <label for="card-radio">
+              <h3>💳 Debit/Credit Card</h3>
+            </label>
+          </div>
+          <p class="payment-desc">Pay securely using your Debit or Credit card.</p>
+          <div class="payment-details" id="card-details" style="display: none;">
+            <div class="input-group">
+              <label for="card-number"><i class="fas fa-credit-card"></i> Card Number:</label>
+              <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19" class="card-input">
+            </div>
+            
+            <div class="card-row">
+              <div class="input-group">
+                <label for="expiry"><i class="fas fa-calendar"></i> Expiry Date:</label>
+                <input type="text" id="expiry" placeholder="MM/YY" maxlength="5" class="card-input">
+              </div>
+              <div class="input-group">
+                <label for="cvv"><i class="fas fa-lock"></i> CVV:</label>
+                <input type="password" id="cvv" placeholder="123" maxlength="3" class="card-input">
+              </div>
+            </div>
+            
+            <div class="input-group">
+              <label for="card-name"><i class="fas fa-user"></i> Cardholder Name:</label>
+              <input type="text" id="card-name" placeholder="Name on Card" class="card-input">
+            </div>
+            <p class="payment-note"><i class="fas fa-shield-alt"></i> All transactions are encrypted and secure</p>
+          </div>
+        </div>
+
+        <!-- Net Banking -->
+        <div class="payment-option" id="NETBANKING" onclick="selectPayment('NETBANKING')">
+          <div class="payment-header">
+            <input type="radio" name="payment" id="netbanking-radio" value="NETBANKING">
+            <label for="netbanking-radio">
+              <h3>🏦 Net Banking</h3>
+            </label>
+          </div>
+          <p class="payment-desc">Pay directly from your bank account using net banking.</p>
+          <div class="payment-details" id="netbanking-details" style="display: none;">
+            <div class="input-group">
+              <label for="bank-select"><i class="fas fa-university"></i> Select Your Bank:</label>
+              <select id="bank-select" class="bank-select">
+                <option value="">Choose your bank</option>
+                <option value="SBI">State Bank of India</option>
+                <option value="HDFC">HDFC Bank</option>
+                <option value="ICICI">ICICI Bank</option>
+                <option value="AXIS">Axis Bank</option>
+                <option value="PNB">Punjab National Bank</option>
+                <option value="BOB">Bank of Baroda</option>
+                <option value="KOTAK">Kotak Mahindra Bank</option>
+                <option value="OTHER">Other Banks</option>
+              </select>
+            </div>
+            <p class="payment-note"><i class="fas fa-check-circle"></i> Redirected to your bank's secure page</p>
+            <p class="payment-note"><i class="fas fa-check-circle"></i> Login with your net banking credentials</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <h2><i class="fas fa-receipt"></i> Order Summary</h2>
+      <div class="summary-row">
+        <span><i class="fas fa-shopping-basket"></i> Subtotal:</span>
+        <span id="subtotal">₹0.00</span>
+      </div>
+      <div class="summary-row">
+        <span><i class="fas fa-truck"></i> Delivery Charges:</span>
+        <span id="delivery">₹50.00</span>
+      </div>
+      <div class="summary-row" id="discountRow" style="display:none; color:#10b981; font-weight:600;">
+        <span><i class="fas fa-tags"></i> Discount:</span>
+        <span id="discountAmount">-₹0.00</span>
+      </div>
+      <div class="summary-row total">
+        <span><strong><i class="fas fa-rupee-sign"></i> Total Amount:</strong></span>
+        <span id="total"><strong>₹50.00</strong></span>
+      </div>
+      <button class="proceed-btn" onclick="proceedPayment()">
+        <i class="fas fa-lock"></i> Proceed to Pay Securely
+      </button>
+      <!-- Coupon Section -->
+      <div class="summary-row" style="flex-direction: column; gap: 10px;">
+        <label style="font-weight:600;">🎟 Apply Coupon</label>
+        <div style="display:flex; gap:10px;">
+          <input 
+            type="text" 
+            id="couponCode" 
+            placeholder="Enter coupon code"
+            style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;"
+          />
+          <button 
+            onclick="applyCoupon()" 
+            style="padding:10px 15px; border:none; border-radius:8px; background:#667eea; color:white; font-weight:600; cursor:pointer;">
+            Apply
+          </button>
+        </div>
+        <small id="couponMsg" style="color:green; font-weight:600;"></small>
+      </div>
+
+      <div class="secure-badge">
+        <i class="fas fa-shield-alt"></i>
+        <span>100% Secure Payment</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedPaymentMethod = null;
+    let orderAmount = 0;
+    let cartItems = [];
+
+    function loadCartFromStorage() {
+      try {
+        cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+      } catch (error) {
+        cartItems = [];
+      }
+    }
+
+    function selectPayment(method) {
+      const selectedOption = document.getElementById(method);
+      if (!selectedOption) return;
+
+      // If the user interacts with already selected option, keep it open
+      if (selectedPaymentMethod === method && selectedOption.classList.contains('selected')) {
+        return;
+      }
+
+      // Remove previous selection
+      document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('selected');
+        const details = option.querySelector('.payment-details');
+        if (details) details.style.display = 'none';
+      });
+
+      // Uncheck all radios
+      document.querySelectorAll('input[name="payment"]').forEach(radio => {
+        radio.checked = false;
+      });
+
+      // Select current method with animation
+      selectedOption.classList.add('selected');
+      
+      const radio = selectedOption.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+
+      const details = document.getElementById(method.toLowerCase() + '-details');
+      if (details) {
+        setTimeout(() => {
+          details.style.display = 'block';
+        }, 100);
+      }
+
+      selectedPaymentMethod = method;
+    }
+
+    function verifyUPI(event) {
+      event.stopPropagation();
+      const upiId = document.getElementById('upi-id').value;
+      if (!upiId) {
+        showNotification('Please enter a valid UPI ID', 'error');
+        return;
+      }
+      if (!upiId.includes('@')) {
+        showNotification('Please enter a valid UPI ID (e.g., yourname@paytm)', 'error');
+        return;
+      }
+      showNotification('UPI ID verified successfully! ✓', 'success');
+    }
+
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        padding: 20px 30px;
+        background: ${type === 'success' ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : 
+                     type === 'error' ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' : 
+                     'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-weight: 600;
+        animation: slideIn 0.3s ease;
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    function showLoading(show = true) {
+      document.getElementById('loadingOverlay').classList.toggle('active', show);
+    }
+
+    // Dummy Payment Integration
+    function initiateRazorpayPayment() {
+      showLoading(true);
+      
+      fetch('/create-razorpay-order', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: orderAmount })
+      })
+      .then(res => res.json())
+      .then(order => {
+        setTimeout(function() {
+          const dummyResponse = {
+            razorpay_payment_id: 'pay_DUMMY' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+            razorpay_order_id: order.id,
+            razorpay_signature: 'sig_DUMMY' + Math.random().toString(36).substr(2, 9).toUpperCase()
+          };
+          
+          verifyPaymentOnServer(dummyResponse);
+        }, 2000);
+      })
+      .catch(error => {
+        showLoading(false);
+        showNotification('Error processing payment. Please try again.', 'error');
+      });
+    }
+
+    function verifyPaymentOnServer(response) {
+      fetch('/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          amount: orderAmount,
+          cart: cartItems
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showLoading(false);
+        if (data.success) {
+          const otpMsg = data.otp ? `\n\nYour OTP: ${data.otp}\n(Show this OTP to delivery agent)` : '';
+          const orderMsg = data.order_number ? `\nOrder ID: ${data.order_number}` : '';
+          showNotification('🎉 Payment successful! Order placed.', 'success');
+          
+          setTimeout(() => {
+            alert('🎉 Payment successful! (Dummy Mode)\nYour order has been placed.\nAmount: ₹' + orderAmount + orderMsg + otpMsg);
+            localStorage.removeItem('cart');
+            localStorage.removeItem('orderTotal');
+            window.location.href = '/home.html';
+          }, 1000);
+        } else {
+          showNotification('Payment verification failed. Please contact support.', 'error');
+        }
+      })
+      .catch(error => {
+        showLoading(false);
+        showNotification('Error verifying payment. Please contact support.', 'error');
+      });
+    }
+
+    function proceedPayment() {
+      loadCartFromStorage();
+
+      if (!cartItems.length) {
+        showNotification('Your cart is empty. Please add items before paying.', 'error');
+        window.location.href = '/';
+        return;
+      }
+
+      if (!selectedPaymentMethod) {
+        showNotification('Please select a payment method', 'error');
+        return;
+      }
+
+      const totalText = document.getElementById('total').textContent;
+      orderAmount = parseFloat(totalText.replace('₹', '').replace(',', ''));
+
+      // For Cash on Delivery
+      if (selectedPaymentMethod === 'COD') {
+        showLoading(true);
+        
+        fetch('/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payment_method: 'COD',
+            amount: orderAmount,
+            cart: cartItems
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          showLoading(false);
+          const otpMsg = data.otp ? `\n\nYour OTP: ${data.otp}\n(Show this OTP to delivery agent)` : '';
+          showNotification('🎉 Order placed successfully!', 'success');
+          
+          setTimeout(() => {
+            alert('🎉 Order placed successfully! (Dummy Mode)\nYou will pay ₹' + orderAmount + ' on delivery.\nOrder ID: ' + data.order_number + otpMsg);
+            localStorage.removeItem('cart');
+            localStorage.removeItem('orderTotal');
+            window.location.href = '/home.html';
+          }, 1000);
+        })
+        .catch(error => {
+          showLoading(false);
+          showNotification('Error placing order. Please try again.', 'error');
+        });
+        return;
+      }
+
+      // For UPI Payment
+      if (selectedPaymentMethod === 'UPI') {
+        const upiId = document.getElementById('upi-id').value;
+        if (!upiId || !upiId.includes('@')) {
+          showNotification('Please enter and verify your UPI ID', 'error');
+          return;
+        }
+        initiateRazorpayPayment();
+        return;
+      }
+
+      // For Card Payment
+      if (selectedPaymentMethod === 'CARD') {
+        const cardNumber = document.getElementById('card-number').value;
+        const expiry = document.getElementById('expiry').value;
+        const cvv = document.getElementById('cvv').value;
+        const cardName = document.getElementById('card-name').value;
+        
+        if (!cardNumber || !expiry || !cvv || !cardName) {
+          showNotification('Please fill all card details', 'error');
+          return;
+        }
+        initiateRazorpayPayment();
+        return;
+      }
+
+      // For Net Banking
+      if (selectedPaymentMethod === 'NETBANKING') {
+        const bank = document.getElementById('bank-select').value;
+        if (!bank) {
+          showNotification('Please select your bank', 'error');
+          return;
+        }
+        initiateRazorpayPayment();
+        return;
+      }
+    }
+
+    // Auto-format card number
+    document.getElementById('card-number')?.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+      let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+      e.target.value = formattedValue;
+    });
+
+    // Auto-format expiry date
+    document.getElementById('expiry')?.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length >= 2) {
+        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+      }
+      e.target.value = value;
+    });
+
+    // CVV - only numbers
+    document.getElementById('cvv')?.addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    // Load order total from localStorage
+    window.addEventListener('DOMContentLoaded', function() {
+      loadCartFromStorage();
+
+      if (!cartItems.length) {
+        showNotification('Your cart is empty. Redirecting to home.', 'error');
+        return setTimeout(() => window.location.href = '/', 1500);
+      }
+
+      const orderTotal = localStorage.getItem('orderTotal') || '0.00';
+      const subtotal = parseFloat(orderTotal);
+      
+      const delivery = subtotal > 99 ? 0.00 : 50.00;
+      const total = subtotal + delivery;
+      
+      document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+      document.getElementById('delivery').textContent = delivery > 0 ? '₹' + delivery.toFixed(2) : 'FREE';
+      document.getElementById('total').textContent = '₹' + total.toFixed(2);
+      
+      orderAmount = total;
+
+      // Prevent clicks on input fields from collapsing selected payment option
+      document.querySelectorAll('.payment-details input, .payment-details select, .payment-details button').forEach(el => {
+        el.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+        });
+        el.addEventListener('focus', function(ev) {
+          ev.stopPropagation();
+        });
+      });
+      discountAmount = 0;
+      appliedCoupon = null;
+      document.getElementById("discountRow").style.display = "none";
+    });
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes slideOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    let discountAmount = 0;
+    let appliedCoupon = null;
+
+    function applyCoupon() {
+      const code = document.getElementById("couponCode").value.trim().toUpperCase();
+      const msg = document.getElementById("couponMsg");
+
+      const subtotal = parseFloat(
+        document.getElementById("subtotal").textContent.replace("₹", "")
+      );
+
+      const delivery =
+        document.getElementById("delivery").textContent === "FREE"
+          ? 0
+          : parseFloat(document.getElementById("delivery").textContent.replace("₹", ""));
+
+      discountAmount = 0;
+      appliedCoupon = null;
+
+      /* ---------------- COUPON DEFINITIONS ---------------- */
+      if (code === "SAVE10") {
+        // 10% discount
+        discountAmount = subtotal * 0.10;
+        appliedCoupon = "10% OFF";
+      } 
+      else if (code === "SAVE20") {
+        // 20% discount with max cap
+        discountAmount = subtotal * 0.20;
+        discountAmount = Math.min(discountAmount, 200); // Max ₹200
+        appliedCoupon = "20% OFF (Max ₹200)";
+      } 
+      else if (code === "FLAT50") {
+        // Flat ₹50 off
+        discountAmount = 50;
+        appliedCoupon = "₹50 OFF";
+      } 
+      else {
+        msg.style.color = "red";
+        msg.textContent = "Invalid coupon code ❌";
+        document.getElementById("discountRow").style.display = "none";
+        updateTotal(subtotal, delivery, 0);
+        return;
+      }
+
+      /* ---------------- APPLY DISCOUNT ---------------- */
+      let newTotal = subtotal + delivery - discountAmount;
+      if (newTotal < 0) newTotal = 0;
+
+      document.getElementById("discountRow").style.display = "flex";
+      document.getElementById("discountAmount").textContent =
+        "-₹" + discountAmount.toFixed(2);
+
+      document.getElementById("total").textContent =
+        "₹" + newTotal.toFixed(2);
+
+      orderAmount = newTotal;
+
+      msg.style.color = "green";
+      msg.textContent = `Coupon Applied: ${appliedCoupon} 🎉`;
+    }
+
+  </script>
+</body>
+</html>
