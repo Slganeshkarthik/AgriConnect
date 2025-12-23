@@ -4,7 +4,7 @@
       "id": "FP64189320",
       "name": "milk",
       "category": "Dairy",
-      "price": 1.0,
+      "price": 100.0,
       "unit": "1litre",
       "stock": 10,
       "description": "a2 milk",
