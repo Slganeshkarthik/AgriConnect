@@ -6,6 +6,18 @@ import datetime
 from datetime import timezone, timedelta
 import json
 from flask import request, jsonify
+import hmac
+import hashlib
+
+# Load environment variables from .env file (optional)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed, environment variables must be set manually
+
+# Import Razorpay
+import razorpay
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY', 'AgriConnect@123')  # Better secret key handling
@@ -14,6 +26,19 @@ app.config['MAX_COOKIE_SIZE'] = 4096  # Set max cookie size to 4KB
 
 # Enable CORS for React development
 CORS(app, supports_credentials=True)
+
+# Razorpay Configuration
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_live_RuzfByNQrTRLJJ')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '44Yvud2IevZFF34izXzWyKht')
+
+# Initialize Razorpay client
+razorpay_client = None
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    print(f"✅ Razorpay initialized with Key ID: {RAZORPAY_KEY_ID[:12]}...")
+else:
+    print("⚠️  Razorpay API keys not set. Payment features will use dummy mode.")
+    print("   Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.")
 
 # Define database path
 DB_PATH = os.path.join(os.path.dirname(__file__), 'user_database.db')
@@ -692,20 +717,44 @@ def checkout():
 
 @app.route('/create-razorpay-order', methods=['POST'])
 def create_razorpay_order():
-    """Dummy payment order creation - simulates payment gateway"""
-    data = request.json
-    amount = int(data['amount']) * 100  # convert ₹ to paise
+    """Create Razorpay order - uses real API if configured, otherwise dummy mode"""
+    try:
+        data = request.json
+        amount = int(float(data['amount']) * 100)  # convert ₹ to paise
+        
+        # Use real Razorpay if configured
+        if razorpay_client:
+            order_data = {
+                "amount": amount,
+                "currency": "INR",
+                "payment_capture": 1,  # Auto-capture payment
+                "notes": {
+                    "app": "AgriConnect"
+                }
+            }
+            order = razorpay_client.order.create(data=order_data)
+            return jsonify(order)
+        else:
+            # Fallback to dummy mode
+            import random, string
+            dummy_order = {
+                "id": "order_" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=14)),
+                "amount": amount,
+                "currency": "INR",
+                "status": "created",
+                "dummy_mode": True
+            }
+            return jsonify(dummy_order)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    # Simulate order creation with dummy data
-    import random, string
-    dummy_order = {
-        "id": "order_" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=14)),
-        "amount": amount,
-        "currency": "INR",
-        "status": "created"
-    }
-
-    return jsonify(dummy_order)
+@app.route('/api/razorpay-key')
+def get_razorpay_key():
+    """Return Razorpay Key ID for frontend (public key only)"""
+    return jsonify({
+        "key_id": RAZORPAY_KEY_ID if RAZORPAY_KEY_ID else None,
+        "is_configured": bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+    })
 
 @app.route('/payment.html')
 def payment():
@@ -832,100 +881,125 @@ def create_order():
 
 @app.route('/verify-payment', methods=['POST'])
 def verify_payment():
-    """Dummy payment verification - always succeeds for simulation"""
+    """Verify Razorpay payment signature and create order"""
     data = request.json
 
     try:
-        # Simulate payment verification (always successful in dummy mode)
-        # Save payment details to database if needed
-        if session.get('username'):
-            username = session.get('username')
-            user = get_user_details(username)
-            amount = data.get('amount')
-            cart_items = data.get('cart', [])
-            
-            if not cart_items:
-                return jsonify({'success': False, 'error': 'Cart items missing for this order'}), 400
-            
-            # Generate order number, payment ID and OTP
-            import random, string
-            order_number = 'ORD' + ''.join(random.choices(string.digits, k=8))
-            payment_id = data.get('razorpay_payment_id', 'DUMMY_' + ''.join(random.choices(string.digits, k=10)))
-            otp = ''.join(random.choices(string.digits, k=6))
-            
-            # Get current IST time
-            date_str, time_str = get_current_time()
-            created_at = f"{date_str} {time_str}"
-            
-            conn = sqlite3.connect(DB_PATH)
-            cur = conn.cursor()
-            
-            # Insert order with payment details, OTP and IST timestamp
-            cur.execute(
-                """INSERT INTO orders (order_number, username, name, address, pincode, phone, total_amount, status, payment_method, payment_id, otp, created_at) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, 'paid', 'Online', ?, ?, ?)""",
-                (order_number, username, user.get('name', ''), user.get('address', ''), 
-                 user.get('pincode', ''), user.get('phone', ''), amount, payment_id, otp, created_at)
-            )
-            order_id = cur.lastrowid
-            
-            # Load products.json for farmer lookup
-            farmer_products = {}
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+        
+        # Verify payment signature if Razorpay is configured
+        signature_verified = False
+        if razorpay_client and razorpay_payment_id and razorpay_order_id and razorpay_signature:
             try:
-                data_path = os.path.join(os.path.dirname(__file__), 'products.json')
-                with open(data_path, 'r', encoding='utf-8') as f:
-                    json_data = json.load(f)
-                    products_list = json_data.get('products', []) if isinstance(json_data, dict) else json_data
-                    for p in products_list:
-                        if p.get('seller_type') == 'farmer':
-                            farmer_products[p['id']] = p['seller_username']
-            except Exception as e:
-                print(f"Error loading products.json for notifications: {e}")
+                # Verify using Razorpay utility
+                razorpay_client.utility.verify_payment_signature({
+                    'razorpay_payment_id': razorpay_payment_id,
+                    'razorpay_order_id': razorpay_order_id,
+                    'razorpay_signature': razorpay_signature
+                })
+                signature_verified = True
+                print(f"✅ Payment signature verified for: {razorpay_payment_id}")
+            except razorpay.errors.SignatureVerificationError as e:
+                print(f"❌ Payment signature verification failed: {e}")
+                return jsonify({'success': False, 'error': 'Payment verification failed. Invalid signature.'}), 400
+        else:
+            # Dummy mode - skip verification
+            signature_verified = True
+            print("⚠️ Dummy mode: Skipping payment signature verification")
+        
+        # Proceed with order creation if signature is verified
+        if not session.get('username'):
+            return jsonify({'success': False, 'error': 'Please login first'}), 401
             
-            # Optimize: Batch insert order items and notifications
-            order_items_to_insert = []
-            notifications_to_insert = []
+        username = session.get('username')
+        user = get_user_details(username)
+        amount = data.get('amount')
+        cart_items = data.get('cart', [])
+        
+        if not cart_items:
+            return jsonify({'success': False, 'error': 'Cart items missing for this order'}), 400
+        
+        # Generate order number, payment ID and OTP
+        import random, string
+        order_number = 'ORD' + ''.join(random.choices(string.digits, k=8))
+        payment_id = data.get('razorpay_payment_id', 'DUMMY_' + ''.join(random.choices(string.digits, k=10)))
+        otp = ''.join(random.choices(string.digits, k=6))
+        
+        # Get current IST time
+        date_str, time_str = get_current_time()
+        created_at = f"{date_str} {time_str}"
+        
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        
+        # Insert order with payment details, OTP and IST timestamp
+        cur.execute(
+            """INSERT INTO orders (order_number, username, name, address, pincode, phone, total_amount, status, payment_method, payment_id, otp, created_at) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'paid', 'Online', ?, ?, ?)""",
+            (order_number, username, user.get('name', ''), user.get('address', ''), 
+             user.get('pincode', ''), user.get('phone', ''), amount, payment_id, otp, created_at)
+        )
+        order_id = cur.lastrowid
+        
+        # Load products.json for farmer lookup
+        farmer_products = {}
+        try:
+            data_path = os.path.join(os.path.dirname(__file__), 'products.json')
+            with open(data_path, 'r', encoding='utf-8') as f:
+                json_data = json.load(f)
+                products_list = json_data.get('products', []) if isinstance(json_data, dict) else json_data
+                for p in products_list:
+                    if p.get('seller_type') == 'farmer':
+                        farmer_products[p['id']] = p['seller_username']
+        except Exception as e:
+            print(f"Error loading products.json for notifications: {e}")
+        
+        # Optimize: Batch insert order items and notifications
+        order_items_to_insert = []
+        notifications_to_insert = []
+        
+        for item in cart_items:
+            product_id = item.get('id')
+            product_name = item.get('name')
+            quantity = int(item.get('qty', 1))
+            price = float(item.get('price', 0))
             
-            for item in cart_items:
-                product_id = item.get('id')
-                product_name = item.get('name')
-                quantity = int(item.get('qty', 1))
-                price = float(item.get('price', 0))
-                
-                order_items_to_insert.append((
-                    order_id,
-                    product_id,
-                    product_name,
-                    quantity,
-                    price
+            order_items_to_insert.append((
+                order_id,
+                product_id,
+                product_name,
+                quantity,
+                price
+            ))
+            
+            # Check if this is a farmer product from JSON
+            farmer_username = farmer_products.get(product_id)
+            if farmer_username:
+                notifications_to_insert.append((
+                    farmer_username, order_id, product_id, product_name, quantity, 
+                    username, user.get('name', ''), 'paid', created_at
                 ))
-                
-                # Check if this is a farmer product from JSON
-                farmer_username = farmer_products.get(product_id)
-                if farmer_username:
-                    notifications_to_insert.append((
-                        farmer_username, order_id, product_id, product_name, quantity, 
-                        username, user.get('name', ''), 'paid', created_at
-                    ))
-            
-            if order_items_to_insert:
-                cur.executemany(
-                    """INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    order_items_to_insert
-                )
-            
-            if notifications_to_insert:
-                cur.executemany(
-                    """INSERT INTO farmer_order_notifications 
-                       (farmer_username, order_id, product_id, product_name, quantity, 
-                        customer_username, customer_name, status, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    notifications_to_insert
-                )
-            
-            conn.commit()
-            conn.close()
+        
+        if order_items_to_insert:
+            cur.executemany(
+                """INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
+                   VALUES (?, ?, ?, ?, ?)""",
+                order_items_to_insert
+            )
+        
+        if notifications_to_insert:
+            cur.executemany(
+                """INSERT INTO farmer_order_notifications 
+                   (farmer_username, order_id, product_id, product_name, quantity, 
+                    customer_username, customer_name, status, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                notifications_to_insert
+            )
+        
+        conn.commit()
+        conn.close()
 
         return jsonify({"success": True, "otp": otp, "order_number": order_number})
 
@@ -1034,6 +1108,70 @@ def place_order():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/razorpay-webhook', methods=['POST'])
+def razorpay_webhook():
+    """Handle Razorpay webhook events for payment status updates"""
+    try:
+        # Get the webhook payload
+        payload = request.get_data(as_text=True)
+        signature = request.headers.get('X-Razorpay-Signature', '')
+        
+        # Verify webhook signature if configured
+        webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
+        if webhook_secret and signature:
+            try:
+                expected_signature = hmac.new(
+                    webhook_secret.encode('utf-8'),
+                    payload.encode('utf-8'),
+                    hashlib.sha256
+                ).hexdigest()
+                
+                if not hmac.compare_digest(signature, expected_signature):
+                    print("❌ Webhook signature verification failed")
+                    return jsonify({"error": "Invalid signature"}), 400
+            except Exception as e:
+                print(f"Webhook signature verification error: {e}")
+        
+        # Parse the event
+        event = json.loads(payload)
+        event_type = event.get('event', '')
+        
+        print(f"📩 Razorpay Webhook received: {event_type}")
+        
+        if event_type == 'payment.captured':
+            payment = event.get('payload', {}).get('payment', {}).get('entity', {})
+            payment_id = payment.get('id')
+            order_id = payment.get('order_id')
+            amount = payment.get('amount', 0) / 100  # Convert paise to rupees
+            
+            print(f"✅ Payment captured: {payment_id} for order {order_id}, amount: ₹{amount}")
+            
+            # Update order status in database if needed
+            # (Payment is already captured, order should be marked as paid)
+            
+        elif event_type == 'payment.failed':
+            payment = event.get('payload', {}).get('payment', {}).get('entity', {})
+            payment_id = payment.get('id')
+            order_id = payment.get('order_id')
+            error_code = payment.get('error_code', 'unknown')
+            error_description = payment.get('error_description', 'Payment failed')
+            
+            print(f"❌ Payment failed: {payment_id} for order {order_id}")
+            print(f"   Error: {error_code} - {error_description}")
+            
+        elif event_type == 'order.paid':
+            order = event.get('payload', {}).get('order', {}).get('entity', {})
+            order_id = order.get('id')
+            
+            print(f"✅ Order paid: {order_id}")
+        
+        return jsonify({"status": "ok"})
+        
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/admin')

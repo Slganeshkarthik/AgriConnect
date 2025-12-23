@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,7 +8,8 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='payment.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Dummy Payment System - No external payment gateway -->
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     * {
       margin: 0;
@@ -35,7 +37,7 @@
       background: white;
       border-radius: 20px;
       padding: 40px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
     .section-title {
@@ -64,8 +66,15 @@
     }
 
     @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.02); }
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.02);
+      }
     }
 
     .payment-methods {
@@ -92,7 +101,7 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
       transition: left 0.5s;
     }
 
@@ -160,6 +169,7 @@
         opacity: 0;
         transform: translateY(-10px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -229,7 +239,7 @@
       background: white;
       border-radius: 20px;
       padding: 35px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       height: fit-content;
       position: sticky;
       top: 100px;
@@ -310,6 +320,7 @@
     }
 
     @media (max-width: 768px) {
+
       .payment-section,
       .order-summary {
         padding: 25px;
@@ -352,8 +363,13 @@
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </head>
@@ -366,32 +382,33 @@
   <!-- Top head bar -->
   <header class="topbar">
     <div class="brand">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" />
       <h1>AgriConnect</h1>
     </div>
     <div class="actions">
       {% if user %}
-        <button class="iconbtn" onclick="window.location.href='/profile.html'" title="Profile">
-          👤 <span class="username-text">{{ user.name or user.username }}</span>
-        </button>
-        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      <button class="iconbtn" onclick="window.location.href='/profile.html'" title="Profile">
+        👤 <span class="username-text">{{ user.name or user.username }}</span>
+      </button>
+      <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
       {% else %}
-        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
       {% endif %}
     </div>
-  </header>  
-  
+  </header>
+
   <div class="container">
     <div class="payment-section">
-      <div class="demo-banner">
-        <i class="fas fa-exclamation-triangle"></i> <strong>DEMO MODE</strong> - This is a dummy payment system for testing purposes. No real transactions will be processed.
+      <div class="demo-banner" id="demoBanner" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i> <strong>TEST MODE</strong> - Using Razorpay test environment. No
+        real transactions will be processed.
       </div>
-      
+
       <h1 class="section-title">
         <i class="fas fa-wallet"></i>
         Select Payment Method
       </h1>
-    
+
       <div class="payment-methods">
         <!-- Cash on Delivery -->
         <div class="payment-option" id="COD" onclick="selectPayment('COD')">
@@ -445,7 +462,7 @@
               <label for="card-number"><i class="fas fa-credit-card"></i> Card Number:</label>
               <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19" class="card-input">
             </div>
-            
+
             <div class="card-row">
               <div class="input-group">
                 <label for="expiry"><i class="fas fa-calendar"></i> Expiry Date:</label>
@@ -456,7 +473,7 @@
                 <input type="password" id="cvv" placeholder="123" maxlength="3" class="card-input">
               </div>
             </div>
-            
+
             <div class="input-group">
               <label for="card-name"><i class="fas fa-user"></i> Cardholder Name:</label>
               <input type="text" id="card-name" placeholder="Name on Card" class="card-input">
@@ -496,7 +513,7 @@
       </div>
     </div>
 
-    
+
 
     <!-- Order Summary -->
     <div class="order-summary">
@@ -524,14 +541,9 @@
       <div class="summary-row" style="flex-direction: column; gap: 10px;">
         <label style="font-weight:600;">🎟 Apply Coupon</label>
         <div style="display:flex; gap:10px;">
-          <input 
-            type="text" 
-            id="couponCode" 
-            placeholder="Enter coupon code"
-            style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;"
-          />
-          <button 
-            onclick="applyCoupon()" 
+          <input type="text" id="couponCode" placeholder="Enter coupon code"
+            style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;" />
+          <button onclick="applyCoupon()"
             style="padding:10px 15px; border:none; border-radius:8px; background:#667eea; color:white; font-weight:600; cursor:pointer;">
             Apply
           </button>
@@ -582,7 +594,7 @@
 
       // Select current method with animation
       selectedOption.classList.add('selected');
-      
+
       const radio = selectedOption.querySelector('input[type="radio"]');
       if (radio) radio.checked = true;
 
@@ -617,9 +629,9 @@
         top: 100px;
         right: 20px;
         padding: 20px 30px;
-        background: ${type === 'success' ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : 
-                     type === 'error' ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' : 
-                     'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+        background: ${type === 'success' ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' :
+          type === 'error' ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' :
+            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
         color: white;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -629,7 +641,7 @@
       `;
       notification.textContent = message;
       document.body.appendChild(notification);
-      
+
       setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notification.remove(), 300);
@@ -640,31 +652,89 @@
       document.getElementById('loadingOverlay').classList.toggle('active', show);
     }
 
-    // Dummy Payment Integration
+    // Razorpay configuration (fetched from server)
+    let razorpayConfig = { key_id: null, is_configured: false };
+
+    // Fetch Razorpay key on page load
+    async function fetchRazorpayConfig() {
+      try {
+        const res = await fetch('/api/razorpay-key');
+        razorpayConfig = await res.json();
+
+        // Show demo banner if using test keys or not configured
+        const demoBanner = document.getElementById('demoBanner');
+        if (!razorpayConfig.is_configured || (razorpayConfig.key_id && razorpayConfig.key_id.startsWith('rzp_test_'))) {
+          demoBanner.style.display = 'block';
+        }
+      } catch (e) {
+        console.log('Razorpay not configured, using dummy mode');
+        document.getElementById('demoBanner').style.display = 'block';
+      }
+    }
+
+    // Real Razorpay Payment Integration
     function initiateRazorpayPayment() {
       showLoading(true);
-      
+
       fetch('/create-razorpay-order', {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: orderAmount })
       })
-      .then(res => res.json())
-      .then(order => {
-        setTimeout(function() {
-          const dummyResponse = {
-            razorpay_payment_id: 'pay_DUMMY' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-            razorpay_order_id: order.id,
-            razorpay_signature: 'sig_DUMMY' + Math.random().toString(36).substr(2, 9).toUpperCase()
-          };
-          
-          verifyPaymentOnServer(dummyResponse);
-        }, 2000);
-      })
-      .catch(error => {
-        showLoading(false);
-        showNotification('Error processing payment. Please try again.', 'error');
-      });
+        .then(res => res.json())
+        .then(order => {
+          showLoading(false);
+
+          // Check if Razorpay is configured and this is a real order
+          if (razorpayConfig.is_configured && razorpayConfig.key_id && !order.dummy_mode) {
+            // Open real Razorpay checkout modal
+            const options = {
+              key: razorpayConfig.key_id,
+              amount: order.amount,
+              currency: order.currency || 'INR',
+              name: 'AgriConnect',
+              description: 'Purchase from AgriConnect',
+              order_id: order.id,
+              handler: function (response) {
+                showLoading(true);
+                verifyPaymentOnServer(response);
+              },
+              prefill: {
+                name: '{{ user.name or "" }}',
+                contact: '{{ user.phone or "" }}'
+              },
+              theme: {
+                color: '#667eea'
+              },
+              modal: {
+                ondismiss: function () {
+                  showNotification('Payment cancelled', 'error');
+                }
+              }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+              showNotification('Payment failed: ' + response.error.description, 'error');
+            });
+            rzp.open();
+          } else {
+            // Fallback to dummy mode
+            showLoading(true);
+            setTimeout(function () {
+              const dummyResponse = {
+                razorpay_payment_id: 'pay_DUMMY' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                razorpay_order_id: order.id,
+                razorpay_signature: 'sig_DUMMY' + Math.random().toString(36).substr(2, 9).toUpperCase()
+              };
+              verifyPaymentOnServer(dummyResponse);
+            }, 2000);
+          }
+        })
+        .catch(error => {
+          showLoading(false);
+          showNotification('Error processing payment. Please try again.', 'error');
+        });
     }
 
     function verifyPaymentOnServer(response) {
@@ -679,28 +749,29 @@
           cart: cartItems
         })
       })
-      .then(res => res.json())
-      .then(data => {
-        showLoading(false);
-        if (data.success) {
-          const otpMsg = data.otp ? `\n\nYour OTP: ${data.otp}\n(Show this OTP to delivery agent)` : '';
-          const orderMsg = data.order_number ? `\nOrder ID: ${data.order_number}` : '';
-          showNotification('🎉 Payment successful! Order placed.', 'success');
-          
-          setTimeout(() => {
-            alert('🎉 Payment successful! (Dummy Mode)\nYour order has been placed.\nAmount: ₹' + orderAmount + orderMsg + otpMsg);
-            localStorage.removeItem('cart');
-            localStorage.removeItem('orderTotal');
-            window.location.href = '/home.html';
-          }, 1000);
-        } else {
-          showNotification('Payment verification failed. Please contact support.', 'error');
-        }
-      })
-      .catch(error => {
-        showLoading(false);
-        showNotification('Error verifying payment. Please contact support.', 'error');
-      });
+        .then(res => res.json())
+        .then(data => {
+          showLoading(false);
+          if (data.success) {
+            const otpMsg = data.otp ? `\n\nYour OTP: ${data.otp}\n(Show this OTP to delivery agent)` : '';
+            const orderMsg = data.order_number ? `\nOrder ID: ${data.order_number}` : '';
+            showNotification('🎉 Payment successful! Order placed.', 'success');
+
+            setTimeout(() => {
+              const modeText = razorpayConfig.is_configured ? '' : ' (Demo Mode)';
+              alert('🎉 Payment successful!' + modeText + '\nYour order has been placed.\nAmount: ₹' + orderAmount + orderMsg + otpMsg);
+              localStorage.removeItem('cart');
+              localStorage.removeItem('orderTotal');
+              window.location.href = '/home.html';
+            }, 1000);
+          } else {
+            showNotification('Payment verification failed. Please contact support.', 'error');
+          }
+        })
+        .catch(error => {
+          showLoading(false);
+          showNotification('Error verifying payment. Please contact support.', 'error');
+        });
     }
 
     function proceedPayment() {
@@ -723,7 +794,7 @@
       // For Cash on Delivery
       if (selectedPaymentMethod === 'COD') {
         showLoading(true);
-        
+
         fetch('/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -733,23 +804,23 @@
             cart: cartItems
           })
         })
-        .then(res => res.json())
-        .then(data => {
-          showLoading(false);
-          const otpMsg = data.otp ? `\n\nYour OTP: ${data.otp}\n(Show this OTP to delivery agent)` : '';
-          showNotification('🎉 Order placed successfully!', 'success');
-          
-          setTimeout(() => {
-            alert('🎉 Order placed successfully! (Dummy Mode)\nYou will pay ₹' + orderAmount + ' on delivery.\nOrder ID: ' + data.order_number + otpMsg);
-            localStorage.removeItem('cart');
-            localStorage.removeItem('orderTotal');
-            window.location.href = '/home.html';
-          }, 1000);
-        })
-        .catch(error => {
-          showLoading(false);
-          showNotification('Error placing order. Please try again.', 'error');
-        });
+          .then(res => res.json())
+          .then(data => {
+            showLoading(false);
+            const otpMsg = data.otp ? `\n\nYour OTP: ${data.otp}\n(Show this OTP to delivery agent)` : '';
+            showNotification('🎉 Order placed successfully!', 'success');
+
+            setTimeout(() => {
+              alert('🎉 Order placed successfully! (Dummy Mode)\nYou will pay ₹' + orderAmount + ' on delivery.\nOrder ID: ' + data.order_number + otpMsg);
+              localStorage.removeItem('cart');
+              localStorage.removeItem('orderTotal');
+              window.location.href = '/home.html';
+            }, 1000);
+          })
+          .catch(error => {
+            showLoading(false);
+            showNotification('Error placing order. Please try again.', 'error');
+          });
         return;
       }
 
@@ -770,7 +841,7 @@
         const expiry = document.getElementById('expiry').value;
         const cvv = document.getElementById('cvv').value;
         const cardName = document.getElementById('card-name').value;
-        
+
         if (!cardNumber || !expiry || !cvv || !cardName) {
           showNotification('Please fill all card details', 'error');
           return;
@@ -792,14 +863,14 @@
     }
 
     // Auto-format card number
-    document.getElementById('card-number')?.addEventListener('input', function(e) {
+    document.getElementById('card-number')?.addEventListener('input', function (e) {
       let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
       let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
       e.target.value = formattedValue;
     });
 
     // Auto-format expiry date
-    document.getElementById('expiry')?.addEventListener('input', function(e) {
+    document.getElementById('expiry')?.addEventListener('input', function (e) {
       let value = e.target.value.replace(/\D/g, '');
       if (value.length >= 2) {
         value = value.slice(0, 2) + '/' + value.slice(2, 4);
@@ -808,12 +879,12 @@
     });
 
     // CVV - only numbers
-    document.getElementById('cvv')?.addEventListener('input', function(e) {
+    document.getElementById('cvv')?.addEventListener('input', function (e) {
       e.target.value = e.target.value.replace(/\D/g, '');
     });
 
     // Load order total from localStorage
-    window.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('DOMContentLoaded', function () {
       loadCartFromStorage();
 
       if (!cartItems.length) {
@@ -823,22 +894,22 @@
 
       const orderTotal = localStorage.getItem('orderTotal') || '0.00';
       const subtotal = parseFloat(orderTotal);
-      
+
       const delivery = subtotal > 99 ? 0.00 : 50.00;
       const total = subtotal + delivery;
-      
+
       document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
       document.getElementById('delivery').textContent = delivery > 0 ? '₹' + delivery.toFixed(2) : 'FREE';
       document.getElementById('total').textContent = '₹' + total.toFixed(2);
-      
+
       orderAmount = total;
 
       // Prevent clicks on input fields from collapsing selected payment option
       document.querySelectorAll('.payment-details input, .payment-details select, .payment-details button').forEach(el => {
-        el.addEventListener('click', function(ev) {
+        el.addEventListener('click', function (ev) {
           ev.stopPropagation();
         });
-        el.addEventListener('focus', function(ev) {
+        el.addEventListener('focus', function (ev) {
           ev.stopPropagation();
         });
       });
@@ -897,18 +968,18 @@
         // 10% discount
         discountAmount = subtotal * 0.10;
         appliedCoupon = "10% OFF";
-      } 
+      }
       else if (code === "SAVE20") {
         // 20% discount with max cap
         discountAmount = subtotal * 0.20;
         discountAmount = Math.min(discountAmount, 200); // Max ₹200
         appliedCoupon = "20% OFF (Max ₹200)";
-      } 
+      }
       else if (code === "FLAT50") {
         // Flat ₹50 off
         discountAmount = 50;
         appliedCoupon = "₹50 OFF";
-      } 
+      }
       else {
         msg.style.color = "red";
         msg.textContent = "Invalid coupon code ❌";
@@ -934,6 +1005,10 @@
       msg.textContent = `Coupon Applied: ${appliedCoupon} 🎉`;
     }
 
+    // Initialize Razorpay config on page load
+    fetchRazorpayConfig();
+
   </script>
 </body>
+
 </html>
