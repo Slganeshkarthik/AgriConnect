@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout - AgriConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='proceedToCheckOutCart.css') }}">
+  <style>
+    
+  </style>
+</head>
+<body>
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/cart.html'" title="Cart">
+        🛒 Cart
+      </button>
+      {% if user %}
+        <span class="iconbtn" title="Logged in">👤 <span class="username-text">{{ user.name or user.username }}</span></span>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="checkout-container">
+    <h1>Checkout</h1>
+
+    <!-- Delivery Address Section -->
+    <div class="section">
+      <h2>📍 Delivery Address</h2>
+      <div class="address-card" id="addressDisplay">
+        <p><strong>Name:</strong> <span id="displayName">{{ user.name or 'Not provided' }}</span></p>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Address:</strong> <span id="displayAddress">{{ user.address or 'Not provided' }}</span></p>
+        <p><strong>Pincode:</strong> <span id="displayPincode">{{ user.pincode or 'Not provided' }}</span></p>
+        <p><strong>Phone:</strong> <span id="displayPhone">{{ user.phone or 'Not provided' }}</span></p>
+        {% if not user.name or not user.address or not user.phone or not user.pincode %}
+          <p style="color: #d00; margin-top: 12px;" id="warningMsg">⚠ Some delivery details are missing. Please update your details.</p>
+        {% endif %}
+      </div>
+      
+      <div class="address-form" id="addressForm" style="display: none;">
+        <div class="form-group">
+          <label>Name:</label>
+          <input type="text" id="editName" value="{{ user.name or '' }}" placeholder="Enter your name" />
+        </div>
+        <div class="form-group">
+          <label>Address:</label>
+          <textarea id="editAddress" rows="3" placeholder="Enter your full address">{{ user.address or '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Pincode:</label>
+          <input type="text" id="editPincode" value="{{ user.pincode or '' }}" placeholder="Enter pincode" pattern="[0-9]{6}" maxlength="6" />
+        </div>
+        <div class="form-group">
+          <label>Phone:</label>
+          <input type="tel" id="editPhone" value="{{ user.phone or '' }}" placeholder="Enter phone number" pattern="[0-9]{10}" maxlength="10" />
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveAddress()">Save Changes</button>
+        </div>
+      </div>
+      
+      <button class="edit-btn" id="editBtn" onclick="enableEdit()">Edit Address</button>
+    </div>
+
+    <!-- Order Summary Section -->
+    <div class="section order-summary">
+      <h2>🛒 Order Summary</h2>
+      <div id="orderItems"></div>
+      <div class="total-row">
+        <span>Total Amount:</span>
+        <span id="totalAmount">₹0</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="window.location.href='/cart.html'">← Back to Cart</button>
+      <button class="btn btn-primary" id="confirmOrderBtn">Confirm & Place Order</button>
+    </div>
+  </div>
+
+  <script>
+    let currentUserData = {
+      name: "{{ user.name or '' }}",
+      address: "{{ user.address or '' }}",
+      pincode: "{{ user.pincode or '' }}",
+      phone: "{{ user.phone or '' }}"
+    };
+
+    function enableEdit() {
+      document.getElementById('addressDisplay').style.display = 'none';
+      document.getElementById('editBtn').style.display = 'none';
+      document.getElementById('addressForm').style.display = 'block';
+    }
+
+    function cancelEdit() {
+      document.getElementById('addressDisplay').style.display = 'block';
+      document.getElementById('editBtn').style.display = 'inline-block';
+      document.getElementById('addressForm').style.display = 'none';
+      
+      // Reset form to current values
+      document.getElementById('editName').value = currentUserData.name;
+      document.getElementById('editAddress').value = currentUserData.address;
+      document.getElementById('editPincode').value = currentUserData.pincode;
+      document.getElementById('editPhone').value = currentUserData.phone;
+    }
+
+    function saveAddress() {
+      const name = document.getElementById('editName').value.trim();
+      const address = document.getElementById('editAddress').value.trim();
+      const pincode = document.getElementById('editPincode').value.trim();
+      const phone = document.getElementById('editPhone').value.trim();
+
+      // Validation
+      if (!name || !address || !pincode || !phone) {
+        alert('All fields are required!');
+        return;
+      }
+
+      if (!/^[0-9]{6}$/.test(pincode)) {
+        alert('Pincode must be exactly 6 digits!');
+        return;
+      }
+
+      if (!/^[0-9]{10}$/.test(phone)) {
+        alert('Phone number must be exactly 10 digits!');
+        return;
+      }
+
+      // Send update to backend
+      fetch('/api/update-user-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address, pincode, phone })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // Update current data
+          currentUserData = { name, address, pincode, phone };
+          
+          // Update display
+          document.getElementById('displayName').textContent = name;
+          document.getElementById('displayAddress').textContent = address;
+          document.getElementById('displayPincode').textContent = pincode;
+          document.getElementById('displayPhone').textContent = phone;
+          
+          // Hide warning if present
+          const warning = document.getElementById('warningMsg');
+          if (warning) warning.style.display = 'none';
+          
+          // Switch back to display mode
+          cancelEdit();
+          
+          alert('Delivery details updated successfully!');
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('Error updating details. Please try again.');
+        console.error(err);
+      });
+    }
+
+    function formatCurrency(v){
+      const n = Number(v||0);
+      return isNaN(n) ? v : new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(n);
+    }
+
+    function renderOrderSummary(){
+      const container = document.getElementById('orderItems');
+      const totalEl = document.getElementById('totalAmount');
+      const raw = localStorage.getItem('cart') || '[]';
+      let cart = [];
+      try{ cart = JSON.parse(raw); }catch(e){ cart = []; }
+
+      if(!cart.length){
+        container.innerHTML = '<p style="color:#999">No items in cart</p>';
+        totalEl.textContent = formatCurrency(0);
+        return;
+      }
+
+      let total = 0;
+      container.innerHTML = '';
+      
+      cart.forEach(item => {
+        const subtotal = (Number(item.price)||0) * (Number(item.qty)||1);
+        total += subtotal;
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'cart-item';
+        itemDiv.innerHTML = `
+          <img src="${item.image||'https://via.placeholder.com/80'}" alt="${item.name}" />
+          <div class="cart-item-details">
+            <div style="font-weight:600">${item.name}</div>
+            <div style="color:#666;font-size:14px">${item.unit || ''}</div>
+            <div style="margin-top:4px">${formatCurrency(item.price)} × ${item.qty}</div>
+          </div>
+          <div class="cart-item-price">
+            ${formatCurrency(subtotal)}
+          </div>
+        `;
+        container.appendChild(itemDiv);
+      });
+
+      totalEl.textContent = formatCurrency(total);
+    }
+
+    // Check if address details are complete
+    function validateAddress(){
+      const name = currentUserData.name;
+      const address = currentUserData.address;
+      const phone = currentUserData.phone;
+      const pincode = currentUserData.pincode;
+      
+      if(!name || !address || !phone || !pincode){
+        alert('Please complete your delivery details before placing an order.');
+        return false;
+      }
+      return true;
+    }
+
+    document.getElementById('confirmOrderBtn').addEventListener('click', ()=>{
+      const cart = localStorage.getItem('cart') || '[]';
+      let items = [];
+      try{ items = JSON.parse(cart); }catch(e){ items = []; }
+      
+      if(!items.length){
+        alert('Your cart is empty!');
+        window.location.href = '/';
+        return;
+      }
+
+      if(!validateAddress()){
+        return;
+      }
+
+      // Calculate total
+      const total = items.reduce((sum, item) => {
+        return sum + ((Number(item.price)||0) * (Number(item.qty)||1));
+      }, 0);
+
+      // Store order total for payment page
+      localStorage.setItem('orderTotal', total.toFixed(2));
+
+      // Redirect to payment page
+      window.location.href = '/payment.html';
+    });
+
+    // Initial render
+    renderOrderSummary();
+
+    // Redirect if cart is empty
+    const cart = localStorage.getItem('cart') || '[]';
+    let items = [];
+    try{ items = JSON.parse(cart); }catch(e){ items = []; }
+    if(!items.length){
+      alert('Your cart is empty!');
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

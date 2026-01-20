@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriConnect — Farm-to-Door</title>
+
+  <link rel="stylesheet" href="static/cart.css">
+</head>
+<body>
+
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+
+    <form class="search" id="searchForm" onsubmit="event.preventDefault();">
+      <input id="searchInput" type="search" placeholder="Search Tools, fetilizers, pesticides..." />
+      <button type="submit" title="Search">Search</button>
+    </form>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/cart.html'" title="Cart">
+        🛒 Cart
+      </button>
+      {% if user %}
+        <button class="iconbtn" onclick="window.location.href='/profile.html'" title="Profile">
+          👤 <span class="username-text">{{ user.name or user.username }}</span>
+        </button>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+  
+  <main style="max-width:900px;margin:16px auto;padding:12px">
+    <h2>Your Cart</h2>
+    
+    {% if user %}
+    <div style="background:#f5f5f5;padding:16px;border-radius:8px;margin-bottom:20px">
+      <h3 style="margin-top:0;border-bottom:2px solid #0b6;padding-bottom:8px">📍 Delivery Address</h3>
+      <p style="margin:8px 0"><strong>Name:</strong> {{ user.name or 'Not provided' }}</p>
+      <p style="margin:8px 0"><strong>Address:</strong> {{ user.address or 'Not provided' }}</p>
+      <p style="margin:8px 0"><strong>Pincode:</strong> {{ user.pincode or 'Not provided' }}</p>
+      <p style="margin:8px 0"><strong>Phone:</strong> {{ user.phone or 'Not provided' }}</p>
+      {% if not user.name or not user.address or not user.pincode or not user.phone %}
+        <p style="color:#d00;margin-top:12px">⚠ Please complete your delivery details before checkout.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    <div id="cartItems"></div>
+  </main>
+    <div style="max-width:900px;margin:16px auto;padding:12px">
+      <div id="cartSummary" style="margin-bottom:16px"></div>
+      <div style="text-align:right">
+        <button id="checkoutBtn" class="btn">Proceed to Checkout</button>
+      </div>
+    </div>
+
+    <script>
+    function formatCurrency(v){
+      const n = Number(v||0);
+      return isNaN(n) ? v : new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(n);
+    }
+
+    function renderCart(){
+      const container = document.getElementById('cartItems');
+      const summaryEl = document.getElementById('cartSummary');
+      const raw = localStorage.getItem('cart') || '[]';
+      let cart = [];
+      try{ cart = JSON.parse(raw); }catch(e){ cart = []; }
+
+      container.innerHTML = '';
+      if(!cart.length){
+        container.innerHTML = '<p>Your cart is empty.</p>';
+        summaryEl.innerHTML = '';
+        return;
+      }
+
+      let total = 0;
+      cart.forEach(item => {
+        const line = document.createElement('div');
+        line.className = 'cart-line';
+        const subtotal = (Number(item.price)||0) * (Number(item.qty)||1);
+        total += subtotal;
+        line.innerHTML = `
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+            <img src="${item.image||'https://via.placeholder.com/120'}" width="96" style="object-fit:cover;border-radius:8px" />
+            <div style="flex:1">
+              <div style="font-weight:600">${item.name}</div>
+              <div style="color:#666">${item.unit||''} • ${item.farmer||''}</div>
+              <div style="margin-top:8px">Price: ${formatCurrency(item.price)} x <input type="number" min="1" value="${item.qty||1}" data-id="${item.id}" class="qty-input" style="width:64px;margin-left:8px" /></div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:700">${formatCurrency(subtotal)}</div>
+              <div style="margin-top:8px"><button class="btn remove-btn" data-id="${item.id}">Remove</button></div>
+            </div>
+          </div>`;
+        container.appendChild(line);
+      });
+
+      summaryEl.innerHTML = `<div style="font-weight:700">Total: ${formatCurrency(total)}</div>`;
+
+      // wire qty change and remove buttons
+      document.querySelectorAll('.qty-input').forEach(inp => {
+        inp.addEventListener('change', (e)=>{
+          const id = e.target.dataset.id;
+          const q = Math.max(1, Number(e.target.value)||1);
+          const raw2 = localStorage.getItem('cart') || '[]';
+          let cart2 = [];
+          try{ cart2 = JSON.parse(raw2); }catch(e){ cart2 = []; }
+          const it = cart2.find(x=>String(x.id)===String(id));
+          if(it){ it.qty = q; localStorage.setItem('cart', JSON.stringify(cart2)); renderCart(); }
+        });
+      });
+
+      document.querySelectorAll('.remove-btn').forEach(b => {
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.id;
+          let cart2 = [];
+          try{ cart2 = JSON.parse(localStorage.getItem('cart')||'[]'); }catch(e){ cart2 = []; }
+          cart2 = cart2.filter(x => String(x.id)!==String(id));
+          localStorage.setItem('cart', JSON.stringify(cart2));
+          renderCart();
+        });
+      });
+    }
+
+    document.getElementById('checkoutBtn').addEventListener('click', ()=>{
+      const cart = localStorage.getItem('cart') || '[]';
+      let items = [];
+      try{ items = JSON.parse(cart); }catch(e){ items = []; }
+      
+      if(!items.length){
+        alert('Your cart is empty!');
+        return;
+      }
+      
+      window.location.href = '/checkout';
+    });
+
+    // initial render
+    renderCart();
+    </script>
+</body>

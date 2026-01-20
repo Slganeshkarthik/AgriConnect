@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - AgriConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='home2.css') }}">
+  <style>
+    .admin-container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 24px;
+    }
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      flex: 1;
+      background: linear-gradient(135deg, #0b6 0%, #0a5 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .filter-bar {
+      background: white;
+      padding: 20px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .filter-bar label {
+      font-weight: 600;
+      color: #333;
+    }
+    .filter-bar select {
+      padding: 8px 16px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 200px;
+    }
+    .filter-bar select:focus {
+      outline: none;
+      border-color: #0b6;
+    }
+    .notification-badge {
+      background: #d00;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-left: 12px;
+    }
+    .pincode-section {
+      background: white;
+      padding: 24px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .pincode-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #0b6;
+      margin-bottom: 16px;
+    }
+    .pincode-header h2 {
+      margin: 0;
+      color: #0b6;
+    }
+    .order-count {
+      background: #f0f0f0;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .order-card {
+      background: #f9f9f9;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border-left: 4px solid #0b6;
+      transition: all 0.3s ease;
+    }
+    .order-card.pending {
+      border-left-color: #f90;
+      background: #fff9f0;
+    }
+    .order-card.completed {
+      border-left-color: #0b6;
+    }
+    .order-card.cancelled {
+      border-left-color: #d00;
+      background: #fff0f0;
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .order-number {
+      font-weight: 700;
+      font-size: 18px;
+      color: #333;
+    }
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-pending {
+      background: #f90;
+      color: white;
+    }
+    .status-completed {
+      background: #0b6;
+      color: white;
+    }
+    .status-cancelled {
+      background: #d00;
+      color: white;
+    }
+    .order-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .order-details p {
+      margin: 4px 0;
+      color: #666;
+    }
+    .order-details strong {
+      color: #333;
+    }
+    .order-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-complete {
+      background: #0b6;
+      color: white;
+    }
+    .btn-cancel {
+      background: #d00;
+      color: white;
+    }
+    .btn-complete:hover {
+      background: #0a5;
+    }
+    .btn-cancel:hover {
+      background: #c00;
+    }
+
+    /* Soil Test Bookings Styles */
+    .soil-test-section {
+      background: white;
+      padding: 24px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #8B4513;
+    }
+    .soil-test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #8B4513;
+    }
+    .soil-test-header h2 {
+      margin: 0;
+      color: #8B4513;
+    }
+    .soil-test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 16px;
+    }
+    .soil-booking-card {
+      background: #f5f5dc;
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid #deb887;
+      transition: all 0.3s ease;
+    }
+    .soil-booking-card:hover {
+      box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      overflow-y: auto;
+    }
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 20px;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 700px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #8B4513;
+    }
+    .modal-header h2 {
+      margin: 0;
+      color: #8B4513;
+    }
+    .close-modal {
+      font-size: 32px;
+      color: #999;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      line-height: 1;
+    }
+    .close-modal:hover {
+      color: #333;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    .form-group label .required {
+      color: #d32f2f;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #8B4513;
+    }
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .btn-modal {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .btn-submit {
+      background: #2e7d32;
+      color: white;
+    }
+    .btn-submit:hover {
+      background: #1b5e20;
+    }
+    .btn-cancel-modal {
+      background: #757575;
+      color: white;
+    }
+    .btn-cancel-modal:hover {
+      background: #616161;
+    }
+    
+    .booking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #deb887;
+    }
+    .booking-id {
+      font-weight: 700;
+      font-size: 16px;
+      color: #8B4513;
+    }
+    .booking-details p {
+      margin: 6px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    .booking-details strong {
+      color: #333;
+    }
+    .test-type-badge {
+      background: #8B4513;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .booking-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect - Admin Panel</h1>
+    </div>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/'" title="Home">
+        🏠 Home
+      </button>
+      {% if user %}
+        <span class="iconbtn" title="Logged in">👤 <span class="username-text">{{ user.name or user.username }}</span></span>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <h1>Order Management
+      {% if pending_count > 0 %}
+        <span class="notification-badge"><span id="pendingBadge">{{ pending_count }}</span> New</span>
+      {% endif %}
+    </h1>
+
+    <!-- Farmer Notifications (for admin2) -->
+    {% if user.username == 'admin2' and notifications %}
+    <div style="background: #fff3cd; border-left: 4px solid #8B4513; padding: 16px; margin-bottom: 24px; border-radius: 6px;">
+      <h3 style="margin: 0 0 12px 0; color: #8B4513; display: flex; align-items: center; gap: 8px;">
+        🔔 Admin Alerts
+        <span style="background: #8B4513; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px;">{{ notifications|length }}</span>
+      </h3>
+      {% for notif in notifications[:5] %}
+      <div style="background: white; padding: 12px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #e0e0e0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+            <strong style="color: #333;">{{ notif.name }}</strong>
+            <span style="color: #666;">({{ notif.username }})</span>
+            <span style="background:#fde68a;color:#8B4513;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;">
+              {% if notif.type == 'soil_test' %}🧪 Soil Test{% else %}🌾 Farmer{% endif %}
+            </span>
+          </div>
+          <span style="font-size: 12px; color: #999;">{{ notif.timestamp }}</span>
+        </div>
+        <p style="margin: 6px 0 0 0; font-size: 13px; color: #444;">{{ notif.message }}</p>
+        {% if notif.type == 'soil_test' %}
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;">
+          ID: {{ notif.booking_id }} • Test: {{ notif.test_type|title }}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% if notifications|length > 5 %}
+      <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">+ {{ notifications|length - 5 }} more alerts</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Soil Test Bookings (for admin2) -->
+    {% if user.username == 'admin2' and soil_test_bookings %}
+    <div class="soil-test-section">
+      <div class="soil-test-header">
+        <h2>🧪 Soil Test Bookings</h2>
+        <span class="order-count">{{ soil_test_bookings|length }} Bookings</span>
+      </div>
+      <div class="soil-test-grid">
+        {% for booking in soil_test_bookings %}
+        <div class="soil-booking-card">
+          <div class="booking-header">
+            <span class="booking-id">📋 {{ booking.booking_id }}</span>
+            <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
+          </div>
+          <div class="booking-details">
+            <p><strong>Farmer:</strong> {{ booking.farmer_name }}</p>
+            <p><strong>Username:</strong> {{ booking.username }}</p>
+            <p><strong>Test Type:</strong> <span class="test-type-badge">{{ booking.test_type }}</span></p>
+            <p><strong>Farm Location:</strong> {{ booking.farm_location }}</p>
+            <p><strong>Farm Size:</strong> {{ booking.farm_size }} acres</p>
+            <p><strong>Contact:</strong> {{ booking.contact_number }}</p>
+            <p><strong>Preferred Date:</strong> {{ booking.preferred_date }}</p>
+            <p><strong>Booked On:</strong> {{ booking.created_at }}</p>
+          </div>
+          <div class="booking-actions">
+            {% if booking.status == 'pending' %}
+            <button class="btn-sm btn-complete" 
+                    onclick="openSoilTestModal({{ booking.id }}, '{{ booking.booking_id }}', '{{ booking.farmer_name }}', '{{ booking.test_type }}')">
+              ✓ Complete & Generate Report
+            </button>
+            <button class="btn-sm btn-cancel" 
+                    data-booking-id="{{ booking.id }}" 
+                    data-status="cancelled"
+                    onclick="updateBookingStatus(this.getAttribute('data-booking-id'), this.getAttribute('data-status'))">
+              ✗ Cancel Booking
+            </button>
+            {% elif booking.status == 'completed' %}
+            <a href="/download-soil-report/{{ booking.booking_id }}" 
+               class="btn-sm" 
+               style="background: #2e7d32; color: white; text-decoration: none; display: inline-block;">
+              📄 View Report
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistics -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <h3>Total Orders</h3>
+        <div class="number" id="totalOrdersCount">{{ total_orders }}</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Orders</h3>
+        <div class="number" id="pendingOrdersCount">{{ pending_count }}</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pincodes</h3>
+        <div class="number">{{ orders_by_pincode|length }}</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <label for="pincodeFilter">Filter by Pincode:</label>
+      <select id="pincodeFilter" onchange="filterOrders()">
+        <option value="all">All Pincodes</option>
+        {% for pincode in orders_by_pincode.keys()|sort %}
+        <option value="{{ pincode }}">{{ pincode }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if orders_by_pincode %}
+      <!-- All orders in a single list -->
+      <div id="ordersContainer">
+      {% for pincode, orders in orders_by_pincode.items()|sort %}
+        {% for order in orders %}
+        <div class="order-card {{ order.status }}" data-pincode="{{ order.pincode or 'No Pincode' }}">
+          <div class="order-header">
+            <div class="order-number">#{{ order.order_number }}</div>
+            <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+          </div>
+
+          <div class="order-details">
+            <p><strong>Customer:</strong> {{ order.name }}</p>
+            <p><strong>Phone:</strong> {{ order.phone }}</p>
+            <p><strong>Address:</strong> {{ order.address }}</p>
+            <p><strong>Pincode:</strong> {{ order.pincode or 'N/A' }}</p>
+            <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+            <p><strong>Payment:</strong> {{ order.payment_method or 'COD' }}</p>
+            <p><strong>Username:</strong> {{ order.username }}</p>
+            <p><strong>Date:</strong> {{ order.created_at }}</p>
+            {% if order.otp %}
+            <p><strong>OTP:</strong> {{ order.otp }}</p>
+            {% endif %}
+          </div>
+
+          <div class="order-actions">
+            <button class="btn-sm" onclick="viewOrderProducts({{ order.id }}, '{{ order.order_number }}')" 
+               style="background: #2e7d32; color: white;">
+              🛒 View Products
+            </button>
+            <a href="/api/download-invoice/{{ order.id }}" target="_blank" 
+               class="btn-sm" 
+               style="background: #e3f2fd; color: #1976d2; text-decoration: none; display: inline-block;">
+              📄 Download Invoice
+            </a>
+            {% if order.status == 'pending' or order.status == 'paid' %}
+            <button class="btn-sm btn-complete" data-order-id="{{ order.id }}" data-status="completed">
+              ✓ Mark Complete
+            </button>
+            <button class="btn-sm btn-cancel" data-order-id="{{ order.id }}" data-status="cancelled" data-payment="{{ order.payment_method }}">
+              ✗ Cancel Order
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="pincode-section" style="text-align:center;padding:40px">
+        <p style="color:#999;font-size:18px">No orders yet</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Soil Test Completion Modal -->
+  <div id="soilTestModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🧪 Complete Soil Test</h2>
+        <button class="close-modal" onclick="closeSoilTestModal()">&times;</button>
+      </div>
+      
+      <div style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <p style="margin: 0; color: #856404; font-size: 14px;">
+          <strong>Booking ID:</strong> <span id="modalBookingId"></span><br>
+          <strong>Farmer:</strong> <span id="modalFarmerName"></span><br>
+          <strong>Test Type:</strong> <span id="modalTestType"></span>
+        </p>
+      </div>
+
+      <form id="soilTestForm">
+        <input type="hidden" id="hiddenBookingId">
+        
+        <h3 style="color: #8B4513; margin-bottom: 16px; font-size: 18px;">Soil Analysis Results</h3>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="phLevel">pH Level <span class="required">*</span></label>
+            <input type="number" id="phLevel" step="0.1" min="0" max="14" required placeholder="e.g., 6.5">
+          </div>
+          
+          <div class="form-group">
+            <label for="nitrogen">Nitrogen (N) <span class="required">*</span> <small>(kg/ha)</small></label>
+            <input type="number" id="nitrogen" step="0.1" min="0" required placeholder="e.g., 280">
+          </div>
+          
+          <div class="form-group">
+            <label for="phosphorus">Phosphorus (P) <span class="required">*</span> <small>(kg/ha)</small></label>
+            <input type="number" id="phosphorus" step="0.1" min="0" required placeholder="e.g., 25">
+          </div>
+          
+          <div class="form-group">
+            <label for="potassium">Potassium (K) <span class="required">*</span> <small>(kg/ha)</small></label>
+            <input type="number" id="potassium" step="0.1" min="0" required placeholder="e.g., 240">
+          </div>
+          
+          <div class="form-group">
+            <label for="organicCarbon">Organic Carbon <small>(%)</small></label>
+            <input type="number" id="organicCarbon" step="0.01" min="0" placeholder="e.g., 0.75">
+          </div>
+          
+          <div class="form-group">
+            <label for="electricalConductivity">Electrical Conductivity <small>(dS/m)</small></label>
+            <input type="number" id="electricalConductivity" step="0.01" min="0" placeholder="e.g., 0.5">
+          </div>
+          
+          <div class="form-group">
+            <label for="soilTexture">Soil Texture</label>
+            <select id="soilTexture">
+              <option value="">Select texture</option>
+              <option value="Sandy">Sandy</option>
+              <option value="Loamy">Loamy</option>
+              <option value="Clay">Clay</option>
+              <option value="Sandy Loam">Sandy Loam</option>
+              <option value="Clay Loam">Clay Loam</option>
+              <option value="Silty">Silty</option>
+              <option value="Silty Clay">Silty Clay</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="moistureContent">Moisture Content <small>(%)</small></label>
+            <input type="number" id="moistureContent" step="0.1" min="0" max="100" placeholder="e.g., 25">
+          </div>
+        </div>
+        
+        <div class="form-group full-width">
+          <label for="recommendations">Recommendations & Suggestions</label>
+          <textarea id="recommendations" placeholder="Enter farming recommendations based on soil analysis...&#10;&#10;Example:&#10;- Apply balanced NPK fertilizer&#10;- Consider organic manure for better soil health&#10;- Recommended crops: Rice, Wheat, Vegetables"></textarea>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-modal btn-cancel-modal" onclick="closeSoilTestModal()">Cancel</button>
+          <button type="submit" class="btn-modal btn-submit">✓ Complete Test & Generate Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Order Products Modal -->
+  <div id="orderProductsModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h2>Order Products - <span id="currentOrderNumber"></span></h2>
+        <button class="close-btn" onclick="closeProductsModal()">&times;</button>
+      </div>
+      
+      <div id="orderProductsList" style="padding: 20px; max-height: 400px; overflow-y: auto;">
+        <!-- Products will be loaded here -->
+      </div>
+      
+      <div class="modal-actions" style="border-top: 1px solid #e0e0e0; padding: 15px 20px; display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" class="btn-modal btn-cancel-modal" onclick="closeProductsModal()">Close</button>
+        <button type="button" class="btn-modal btn-submit" onclick="openDealerRequestModal()" style="background: #2e7d32;">
+          📞 Contact Dealer/Farmer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dealer Request Modal -->
+  <div id="dealerRequestModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h2>Send Request to Dealer/Farmer</h2>
+        <button class="close-btn" onclick="closeDealerRequestModal()">&times;</button>
+      </div>
+      
+      <form id="dealerRequestForm" onsubmit="event.preventDefault(); sendDealerRequest();">
+        <input type="hidden" id="requestOrderId">
+        
+        <div class="form-group full-width">
+          <label for="dealerSelect">Select Dealer/Farmer <span class="required">*</span></label>
+          <select id="dealerSelect" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+            <option value="">-- Choose a dealer --</option>
+            
+            <optgroup label="🌾 Agricultural Products Dealers">
+              {% for dealer in farm_products %}
+              <option value="{{ loop.index }}" 
+                      data-name="{{ dealer.name }}" 
+                      data-phone="{{ dealer.phone }}" 
+                      data-email="{{ dealer.email }}">
+                {{ dealer.name }} - {{ dealer.location }} ({{ dealer.phone }})
+              </option>
+              {% endfor %}
+            </optgroup>
+            
+            {% for category, dealers in dealers_data.items() %}
+            <optgroup label="🥬 {{ category|title }} Dealers">
+              {% for dealer in dealers %}
+              <option value="{{ category }}_{{ loop.index }}" 
+                      data-name="{{ dealer.name }}" 
+                      data-phone="{{ dealer.contact }}" 
+                      data-email="{{ dealer.email }}">
+                {{ dealer.name }} - {{ dealer.location }} ({{ dealer.contact }})
+              </option>
+              {% endfor %}
+            </optgroup>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="form-group full-width">
+          <label for="requestedProducts">Products Requested <span class="required">*</span></label>
+          <input type="text" id="requestedProducts" readonly 
+                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f5f5f5;">
+        </div>
+        
+        <div class="form-group full-width">
+          <label for="requestMessage">Message/Requirements <span class="required">*</span></label>
+          <textarea id="requestMessage" required rows="5" 
+                    placeholder="Enter your message to the dealer...&#10;&#10;Example:&#10;- Need immediate delivery&#10;- Looking for bulk purchase discount&#10;- Inquiry about product quality and certifications"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
+        </div>
+        
+        <div class="modal-actions" style="border-top: 1px solid #e0e0e0; padding: 15px 0; margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-modal btn-cancel-modal" onclick="closeDealerRequestModal()">Cancel</button>
+          <button type="submit" class="btn-modal btn-submit" style="background: #2e7d32;">
+            📤 Send Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function filterOrders() {
+      const selectedPincode = document.getElementById('pincodeFilter').value;
+      const orderCards = document.querySelectorAll('.order-card');
+      
+      let visibleCount = 0;
+      let visiblePending = 0;
+      
+      orderCards.forEach(card => {
+        const cardPincode = card.getAttribute('data-pincode');
+        
+        if (selectedPincode === 'all' || cardPincode === selectedPincode) {
+          card.style.display = 'block';
+          visibleCount++;
+          
+          // Count pending orders in filtered view
+          if (card.classList.contains('pending')) {
+            visiblePending++;
+          }
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Update statistics
+      document.getElementById('totalOrdersCount').textContent = visibleCount;
+      document.getElementById('pendingOrdersCount').textContent = visiblePending;
+      
+      const badge = document.getElementById('pendingBadge');
+      if (badge) {
+        badge.textContent = visiblePending;
+      }
+    }
+
+    function updateOrderStatus(orderId, status, paymentMethod) {
+      let confirmMsg = `Are you sure you want to mark this order as ${status}?`;
+      if (status === 'cancelled' && paymentMethod === 'Online') {
+        confirmMsg += '\n\nNote: Amount will be refunded to customer within 2 business days.';
+      }
+      
+      if (!confirm(confirmMsg)) {
+        return;
+      }
+
+      fetch('/api/update-order-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, status: status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          let msg = data.message;
+          if (status === 'cancelled' && data.refund_message) {
+            msg += '\n\n' + data.refund_message;
+          }
+          alert(msg);
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('Error updating order status');
+        console.error(err);
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-order-id][data-status]');
+      if (!btn) return;
+      const orderId = parseInt(btn.getAttribute('data-order-id'), 10);
+      const status = btn.getAttribute('data-status');
+      const paymentMethod = btn.getAttribute('data-payment');
+      if (!isNaN(orderId) && status) {
+        updateOrderStatus(orderId, status, paymentMethod);
+      }
+    });
+
+    // Soil test booking status update function (for cancellation only)
+    function updateBookingStatus(bookingId, status) {
+      const confirmMsg = `Are you sure you want to cancel this soil test booking?`;
+      
+      if (!confirm(confirmMsg)) {
+        return;
+      }
+
+      fetch('/api/update-soil-test-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId, status: status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('Error updating booking status');
+        console.error(err);
+      });
+    }
+
+    // Open soil test modal
+    function openSoilTestModal(bookingId, bookingIdStr, farmerName, testType) {
+      document.getElementById('hiddenBookingId').value = bookingId;
+      document.getElementById('modalBookingId').textContent = bookingIdStr;
+      document.getElementById('modalFarmerName').textContent = farmerName;
+      document.getElementById('modalTestType').textContent = testType;
+      document.getElementById('soilTestModal').classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    // Close soil test modal
+    function closeSoilTestModal() {
+      document.getElementById('soilTestModal').classList.remove('active');
+      document.getElementById('soilTestForm').reset();
+      document.body.style.overflow = 'auto';
+    }
+
+    // Handle soil test form submission
+    document.getElementById('soilTestForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const bookingId = document.getElementById('hiddenBookingId').value;
+      const formData = {
+        booking_id: bookingId,
+        ph_level: parseFloat(document.getElementById('phLevel').value),
+        nitrogen: parseFloat(document.getElementById('nitrogen').value),
+        phosphorus: parseFloat(document.getElementById('phosphorus').value),
+        potassium: parseFloat(document.getElementById('potassium').value),
+        organic_carbon: document.getElementById('organicCarbon').value ? parseFloat(document.getElementById('organicCarbon').value) : null,
+        electrical_conductivity: document.getElementById('electricalConductivity').value ? parseFloat(document.getElementById('electricalConductivity').value) : null,
+        soil_texture: document.getElementById('soilTexture').value || null,
+        moisture_content: document.getElementById('moistureContent').value ? parseFloat(document.getElementById('moistureContent').value) : null,
+        recommendations: document.getElementById('recommendations').value.trim() || 'No specific recommendations'
+      };
+
+      // Validate required fields
+      if (!formData.ph_level || !formData.nitrogen || !formData.phosphorus || !formData.potassium) {
+        alert('Please fill all required fields (pH Level, Nitrogen, Phosphorus, Potassium)');
+        return;
+      }
+
+      fetch('/api/complete-soil-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          closeSoilTestModal();
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('Error completing soil test. Please try again.');
+        console.error(err);
+      });
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('soilTestModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeSoilTestModal();
+      }
+    });
+
+    // ===== ORDER PRODUCTS & DEALER REQUEST FUNCTIONALITY =====
+    let currentOrderId = null;
+    let currentOrderProducts = [];
+
+    function viewOrderProducts(orderId, orderNumber) {
+      currentOrderId = orderId;
+      
+      // Show loading
+      const productsContainer = document.getElementById('orderProductsList');
+      productsContainer.innerHTML = '<p style="text-align:center; padding: 20px;">Loading products...</p>';
+      document.getElementById('orderProductsModal').style.display = 'block';
+      document.getElementById('currentOrderNumber').textContent = orderNumber;
+      
+      // Fetch order items
+      fetch(`/api/get-order-items/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            currentOrderProducts = data.items;
+            displayOrderProducts(data.items);
+          } else {
+            productsContainer.innerHTML = '<p style="color: red; text-align: center;">Error loading products</p>';
+          }
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          productsContainer.innerHTML = '<p style="color: red; text-align: center;">Failed to load products</p>';
+        });
+    }
+
+    function displayOrderProducts(items) {
+      const container = document.getElementById('orderProductsList');
+      
+      if (items.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">No products in this order</p>';
+        return;
+      }
+      
+      let html = '<table style="width: 100%; border-collapse: collapse;">';
+      html += '<thead><tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">';
+      html += '<th style="padding: 12px; text-align: left;">Product</th>';
+      html += '<th style="padding: 12px; text-align: center;">Quantity</th>';
+      html += '<th style="padding: 12px; text-align: right;">Price</th>';
+      html += '<th style="padding: 12px; text-align: right;">Total</th>';
+      html += '</tr></thead><tbody>';
+      
+      let grandTotal = 0;
+      items.forEach(item => {
+        const total = item.quantity * item.price;
+        grandTotal += total;
+        html += '<tr style="border-bottom: 1px solid #eee;">';
+        html += `<td style="padding: 10px;"><strong>${item.product_name}</strong></td>`;
+        html += `<td style="padding: 10px; text-align: center;">${item.quantity}</td>`;
+        html += `<td style="padding: 10px; text-align: right;">₹${item.price.toFixed(2)}</td>`;
+        html += `<td style="padding: 10px; text-align: right;">₹${total.toFixed(2)}</td>`;
+        html += '</tr>';
+      });
+      
+      html += '<tr style="background: #f9f9f9; font-weight: bold;">';
+      html += '<td colspan="3" style="padding: 12px; text-align: right;">Grand Total:</td>';
+      html += `<td style="padding: 12px; text-align: right; color: #2e7d32;">₹${grandTotal.toFixed(2)}</td>`;
+      html += '</tr>';
+      html += '</tbody></table>';
+      
+      container.innerHTML = html;
+    }
+
+    function closeProductsModal() {
+      document.getElementById('orderProductsModal').style.display = 'none';
+    }
+
+    function openDealerRequestModal() {
+      // Pre-populate products
+      const productsText = currentOrderProducts.map(p => `${p.product_name} (${p.quantity})`).join(', ');
+      document.getElementById('requestedProducts').value = productsText;
+      document.getElementById('requestOrderId').value = currentOrderId;
+      
+      // Close products modal and open dealer request modal
+      closeProductsModal();
+      document.getElementById('dealerRequestModal').style.display = 'block';
+    }
+
+    function closeDealerRequestModal() {
+      document.getElementById('dealerRequestModal').style.display = 'none';
+      document.getElementById('dealerRequestForm').reset();
+    }
+
+    function sendDealerRequest() {
+      const dealerSelect = document.getElementById('dealerSelect');
+      const message = document.getElementById('requestMessage').value;
+      const products = document.getElementById('requestedProducts').value;
+      
+      if (!dealerSelect.value) {
+        alert('Please select a dealer');
+        return;
+      }
+      
+      if (!message.trim()) {
+        alert('Please enter a message');
+        return;
+      }
+      
+      const selectedOption = dealerSelect.options[dealerSelect.selectedIndex];
+      const dealerData = {
+        order_id: currentOrderId,
+        dealer_name: selectedOption.dataset.name,
+        dealer_phone: selectedOption.dataset.phone,
+        dealer_email: selectedOption.dataset.email,
+        products_requested: products,
+        message: message
+      };
+      
+      // Show loading
+      const submitBtn = document.querySelector('#dealerRequestModal .btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      
+      fetch('/api/send-dealer-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dealerData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(`✅ Request sent successfully to ${dealerData.dealer_name}!`);
+          closeDealerRequestModal();
+        } else {
+          alert('❌ Failed to send request. Please try again.');
+        }
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        alert('❌ Error sending request. Please try again.');
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Request';
+      });
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('orderProductsModal').addEventListener('click', function(e) {
+      if (e.target === this) closeProductsModal();
+    });
+    
+    document.getElementById('dealerRequestModal').addEventListener('click', function(e) {
+      if (e.target === this) closeDealerRequestModal();
+    });
+  </script>
+</body>
+</html>

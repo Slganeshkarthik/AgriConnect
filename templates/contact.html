@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Dealers - AgriConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home2.css') }}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #585859 0%, #929194 100%);
+            min-height: 100vh;
+        }
+
+        .contact-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .page-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #555;
+        }
+
+        .tab-btn:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dealers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .dealer-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #667eea;
+        }
+
+        .dealer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .dealer-name {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dealer-name::before {
+            content: "🏪";
+            font-size: 1.2em;
+        }
+
+        .dealer-info {
+            margin: 8px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dealer-info strong {
+            color: #764ba2;
+            min-width: 80px;
+        }
+
+        .dealer-products {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .dealer-products strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .product-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .product-tag {
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .phone-link {
+            color: #28a745;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .phone-link:hover {
+            text-decoration: underline;
+        }
+
+        .email-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .email-link:hover {
+            text-decoration: underline;
+        }
+
+        .no-dealers {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .dealers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-title {
+                font-size: 2em;
+            }
+            
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+            <h1>AgriConnect</h1>
+        </div>
+        <div class="actions">
+            <button class="iconbtn" onclick="window.location.href='/'" title="Home">🏠 Home</button>
+            <button class="iconbtn" onclick="window.location.href='/cart.html'" title="Cart">🛒 Cart</button>
+            {% if session.username %}
+                <span class="iconbtn" title="Logged in">👤 <span class="username-text">{{ session.username }}</span></span>
+                <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+            {% else %}
+                <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="contact-container">
+        <h1 class="page-title">🌾 Contact Our Dealers 🌾</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('vegetables')">🥬 Vegetables</button>
+            <button class="tab-btn" onclick="switchTab('fruits')">🍎 Fruits</button>
+            <button class="tab-btn" onclick="switchTab('flowers')">🌸 Flowers</button>
+            <button class="tab-btn" onclick="switchTab('dairy')">🥛 Dairy</button>
+            <button class="tab-btn" onclick="switchTab('poultry')">🐔 Poultry</button>
+        </div>
+
+        <div id="vegetables" class="tab-content active">
+            <div class="dealers-grid">
+                {% if dealers.vegetables %}
+                    {% for dealer in dealers.vegetables %}
+                    <div class="dealer-card">
+                        <div class="dealer-name">{{ dealer.name }}</div>
+                        <div class="dealer-info"><strong>Contact:</strong> {{ dealer.contact }}</div>
+                        <div class="dealer-info">
+                            <strong>Phone:</strong> 
+                            <a href="tel:{{ dealer.phone }}" class="phone-link">📞 {{ dealer.phone }}</a>
+                        </div>
+                        <div class="dealer-info">
+                            <strong>Email:</strong> 
+                            <a href="mailto:{{ dealer.email }}" class="email-link">✉️ {{ dealer.email }}</a>
+                        </div>
+                        <div class="dealer-info"><strong>Location:</strong> {{ dealer.location }}</div>
+                        <div class="dealer-info"><strong>Pincode:</strong> {{ dealer.pincode }}</div>
+                        <div class="dealer-products">
+                            <strong>Available Products:</strong>
+                            <div class="product-tags">
+                                {% for product in dealer.products %}
+                                <span class="product-tag">{{ product }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-dealers">No dealers available</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="fruits" class="tab-content">
+            <div class="dealers-grid">
+                {% if dealers.fruits %}
+                    {% for dealer in dealers.fruits %}
+                    <div class="dealer-card">
+                        <div class="dealer-name">{{ dealer.name }}</div>
+                        <div class="dealer-info"><strong>Contact:</strong> {{ dealer.contact }}</div>
+                        <div class="dealer-info">
+                            <strong>Phone:</strong> 
+                            <a href="tel:{{ dealer.phone }}" class="phone-link">📞 {{ dealer.phone }}</a>
+                        </div>
+                        <div class="dealer-info">
+                            <strong>Email:</strong> 
+                            <a href="mailto:{{ dealer.email }}" class="email-link">✉️ {{ dealer.email }}</a>
+                        </div>
+                        <div class="dealer-info"><strong>Location:</strong> {{ dealer.location }}</div>
+                        <div class="dealer-info"><strong>Pincode:</strong> {{ dealer.pincode }}</div>
+                        <div class="dealer-products">
+                            <strong>Available Products:</strong>
+                            <div class="product-tags">
+                                {% for product in dealer.products %}
+                                <span class="product-tag">{{ product }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-dealers">No dealers available</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="flowers" class="tab-content">
+            <div class="dealers-grid">
+                {% if dealers.flowers %}
+                    {% for dealer in dealers.flowers %}
+                    <div class="dealer-card">
+                        <div class="dealer-name">{{ dealer.name }}</div>
+                        <div class="dealer-info"><strong>Contact:</strong> {{ dealer.contact }}</div>
+                        <div class="dealer-info">
+                            <strong>Phone:</strong> 
+                            <a href="tel:{{ dealer.phone }}" class="phone-link">📞 {{ dealer.phone }}</a>
+                        </div>
+                        <div class="dealer-info">
+                            <strong>Email:</strong> 
+                            <a href="mailto:{{ dealer.email }}" class="email-link">✉️ {{ dealer.email }}</a>
+                        </div>
+                        <div class="dealer-info"><strong>Location:</strong> {{ dealer.location }}</div>
+                        <div class="dealer-info"><strong>Pincode:</strong> {{ dealer.pincode }}</div>
+                        <div class="dealer-products">
+                            <strong>Available Products:</strong>
+                            <div class="product-tags">
+                                {% for product in dealer.products %}
+                                <span class="product-tag">{{ product }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-dealers">No dealers available</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="dairy" class="tab-content">
+            <div class="dealers-grid">
+                {% if dealers.dairy %}
+                    {% for dealer in dealers.dairy %}
+                    <div class="dealer-card">
+                        <div class="dealer-name">{{ dealer.name }}</div>
+                        <div class="dealer-info"><strong>Contact:</strong> {{ dealer.contact }}</div>
+                        <div class="dealer-info">
+                            <strong>Phone:</strong> 
+                            <a href="tel:{{ dealer.phone }}" class="phone-link">📞 {{ dealer.phone }}</a>
+                        </div>
+                        <div class="dealer-info">
+                            <strong>Email:</strong> 
+                            <a href="mailto:{{ dealer.email }}" class="email-link">✉️ {{ dealer.email }}</a>
+                        </div>
+                        <div class="dealer-info"><strong>Location:</strong> {{ dealer.location }}</div>
+                        <div class="dealer-info"><strong>Pincode:</strong> {{ dealer.pincode }}</div>
+                        <div class="dealer-products">
+                            <strong>Available Products:</strong>
+                            <div class="product-tags">
+                                {% for product in dealer.products %}
+                                <span class="product-tag">{{ product }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-dealers">No dealers available</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="poultry" class="tab-content">
+            <div class="dealers-grid">
+                {% if dealers.poultry %}
+                    {% for dealer in dealers.poultry %}
+                    <div class="dealer-card">
+                        <div class="dealer-name">{{ dealer.name }}</div>
+                        <div class="dealer-info"><strong>Contact:</strong> {{ dealer.contact }}</div>
+                        <div class="dealer-info">
+                            <strong>Phone:</strong> 
+                            <a href="tel:{{ dealer.phone }}" class="phone-link">📞 {{ dealer.phone }}</a>
+                        </div>
+                        <div class="dealer-info">
+                            <strong>Email:</strong> 
+                            <a href="mailto:{{ dealer.email }}" class="email-link">✉️ {{ dealer.email }}</a>
+                        </div>
+                        <div class="dealer-info"><strong>Location:</strong> {{ dealer.location }}</div>
+                        <div class="dealer-info"><strong>Pincode:</strong> {{ dealer.pincode }}</div>
+                        <div class="dealer-products">
+                            <strong>Available Products:</strong>
+                            <div class="product-tags">
+                                {% for product in dealer.products %}
+                                <span class="product-tag">{{ product }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-dealers">No dealers available</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(category) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(category).classList.add('active');
+
+            // Activate clicked button
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

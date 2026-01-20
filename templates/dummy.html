@@ -1,0 +1,37 @@
+<button class="iconbtn" id="homeBtn" title="Home">
+  🏠
+</button>
+
+<script>
+  const btn = document.getElementById("homeBtn");
+  let timer;
+  const holdTime = 1000; // 1 second
+
+  // Long press function
+  function goHome() {
+    window.location.href = '/';
+  }
+
+  // Touch start (mobile)
+  btn.addEventListener("touchstart", () => {
+    timer = setTimeout(goHome, holdTime);
+  });
+
+  // Touch release
+  btn.addEventListener("touchend", () => {
+    clearTimeout(timer);
+  });
+
+  // Mouse hold (desktop)
+  btn.addEventListener("mousedown", () => {
+    timer = setTimeout(goHome, holdTime);
+  });
+
+  btn.addEventListener("mouseup", () => {
+    clearTimeout(timer);
+  });
+
+  btn.addEventListener("mouseleave", () => {
+    clearTimeout(timer);
+  });
+</script>
