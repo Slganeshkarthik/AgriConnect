@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriConnect — Farm-to-Door</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='home2.css') }}">
+</head>
+<body>
+
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+
+    <form class="search" id="searchForm" onsubmit="event.preventDefault();">
+      <input id="searchInput" type="search" placeholder="Search Tools, fetilizers, pesticides..." />
+      <button type="submit" title="Search">Search</button>
+    </form>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/cart.html'" title="Cart">
+        🛒 Cart
+      </button>
+      {% if user %}
+        <button class="iconbtn" onclick="window.location.href='/profile.html'" title="Profile">
+          👤 <span class="username-text">{{ user.name or user.username }}</span>
+        </button>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Nav bar -->
+  <nav class="navbar">
+    <a href="/30-min.html?source=farmers">30-min</a>
+    <a href="#contact-dealer">contact-dealer</a>
+    <a href="#sell-yourself">sell-yourself</a>
+    <a href="#agri-tools">agri-tools</a>
+    <a href="#tutorials">tutorials</a>
+    <a href="/">purchase-for-home</a>
+  </nav>
+
+  <!-- Banner -->
+  <section class="banner" aria-label="Showcase">
+    <div class="banner-content">
+      <h2>Trusted • Authoriaed   • Better-value </h2>
+      <p>Connect with nearby farmers. Order directly. Fair prices, fresher produce.</p>
+      <a class="cta" href="#products">Shop requirments</a>
+    </div>
+  </section>
+
+  <!-- Ticker -->
+  <div class="ticker-wrap" aria-label="Featured products">
+    <div class="ticker" id="ticker"></div>
+  </div>
+
+  <!-- Contact strip -->
+  <div class="contact">
+    <span>🤝</span>
+    <div>
+      <strong>Direct connect:</strong> to a dealers .
+    </div>
+    <button class="btn" onclick="openDialer()">Contact a Farmer</button>
+    <button class="btn secondary" onclick="startChat()">Start Chat</button>
+  </div>
+
+  <!-- Main -->
+  <main class="container">
+
+    <div class="section-head">
+      <h3 id="products">Products</h3>
+      <div class="row">
+        <button class="btn" onclick="scrollRow(-1)">◀ Scroll</button>
+        <button class="btn" onclick="scrollRow(1)">Scroll ▶</button>
+      </div>
+    </div>
+
+    <div class="scroller" id="scroller"></div>
+
+    <div class="section-head">
+      <h3>All Items</h3>
+      <span class="meta" id="count"></span>
+    </div>
+
+    <section class="grid" id="grid"></section>
+
+  </main>
+
+  <footer class="container" style="opacity:.7;font-size:13px">
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0">
+    
+
+
+<!-- ====================== SCRIPT SECTION ======================= -->
+<script>
+
+// ---------- Utilities ----------
+function currency(v){
+  const n = Number(v);
+  return isNaN(n) ? v : new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format(n);
+}
+
+function openDialer(){
+  const first = window.__products?.find(p => p.phone);
+  if(first && first.phone){
+    window.location.href = `tel:${first.phone}`;
+  } else {
+    alert("No farmer phone number available.");
+  }
+}
+
+function startChat(){
+  alert("Integrate WhatsApp or chat link here.");
+}
+
+
+// ---------- Product Cards ----------
+function productCard(p){
+  const userPincode = "{{ user.pincode if user else '' }}";
+  const showFastDelivery = userPincode && p.pincode && userPincode === p.pincode;
+  
+  const div = document.createElement("article");
+  div.className = "card";
+  div.style.cursor = 'pointer';
+  // navigate to product page when card clicked; buttons stop propagation
+  div.addEventListener('click', () => { window.location.href = `/product/${p.id}`; });
+
+  div.innerHTML = `
+    <img class="thumb" src="${p.image || 'https://via.placeholder.com/600x450'}" alt="${p.name}"/>
+    <div class="card-body">
+      <div class="name">${p.name}</div>
+      <div class="meta">by ${p.farmer} • ${p.location}</div>
+      ${showFastDelivery ? '<div style="background:#0b6;color:white;padding:6px 10px;border-radius:4px;font-size:12px;font-weight:600;margin-top:6px;display:inline-block">🚀 30-Minute Delivery!</div>' : ''}
+      <div class="row">
+        <div class="price">${currency(p.price)}</div>
+        <div class="meta">/ ${p.unit}</div>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="event.stopPropagation(); addToCart('${p.id}')">Add to Cart</button>
+      </div>
+    </div>`;
+  return div;
+}
+function tickerItem(p){
+  const el = document.createElement("div");
+  el.className = "tick-item";
+  el.innerHTML = `
+    <img src="${p.image}" alt="${p.name}">
+    <div>
+      <strong>${p.name}</strong>
+      <div class="meta">${currency(p.price)} / ${p.unit}</div>
+    </div>`;
+  return el;
+}
+
+function addToCart(id){
+  try{
+    const prod = (window.__products_map && window.__products_map[id]) || (window.__products && window.__products.find(p=>String(p.id) === String(id)));
+    if(!prod){ alert('Product not found'); return; }
+
+    const raw = localStorage.getItem('cart') || '[]';
+    const cart = JSON.parse(raw);
+    const existing = cart.find(i => String(i.id) === String(prod.id));
+    if(existing){ existing.qty = (existing.qty || 1) + 1; }
+    else { cart.push(Object.assign({}, prod, { qty: 1 })); }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert(prod.name + ' added to cart');
+  }catch(e){
+    console.error('addToCart error', e);
+    alert('Could not add to cart');
+  }
+}
+
+
+// ---------- Render ----------
+function render(products){
+  const grid = document.getElementById("grid");
+  const scroller = document.getElementById("scroller");
+  const ticker = document.getElementById("ticker");
+
+  grid.innerHTML = "";
+  scroller.innerHTML = "";
+  ticker.innerHTML = "";
+
+  products.forEach(p => {
+    grid.appendChild(productCard(p));
+    scroller.appendChild(productCard(p));
+  });
+
+  // Infinite smooth ticker effect
+  [...products, ...products].forEach(p => ticker.appendChild(tickerItem(p)));
+
+  document.getElementById("count").textContent = `${products.length} items`;
+}
+
+
+// ---------- Fetch Products From Backend ----------
+async function loadProducts(){
+  try {
+    const res = await fetch("/api/products");
+    const products = await res.json();
+    window.__products = products;
+    // build map immediately after loading
+    window.__products_map = {};
+    (window.__products || []).forEach(p => { window.__products_map[p.id] = p; });
+    render(products);
+
+  } catch(err){
+    console.error("Error loading products:", err);
+    alert("Unable to load products from backend.");
+  }
+}
+
+loadProducts();
+
+// build global product map for quick lookups (used by addToCart)
+window.__products_map = {};
+try{
+  (window.__products || []).forEach(p => { window.__products_map[p.id] = p; });
+}catch(e){ console.warn('Could not build products map', e); }
+
+
+// ---------- Search ----------
+document.getElementById("searchForm").addEventListener("submit", () => {
+  const q = document.getElementById("searchInput").value.toLowerCase().trim();
+
+  const filtered = window.__products.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.farmer.toLowerCase().includes(q) ||
+    p.location.toLowerCase().includes(q)
+  );
+
+  render(filtered);
+});
+
+
+// ---------- Horizontal Scroll ----------
+const scrollerEl = () => document.getElementById("scroller");
+
+window.addEventListener("wheel", e => {
+  const el = scrollerEl();
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    el.scrollLeft += e.deltaY * 0.8;
+  }
+}, { passive: true });
+
+function scrollRow(dir){
+  scrollerEl().scrollBy({ left: dir * 320, behavior: "smooth" });
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "vegetables": [
+    {
+      "name": "Green Valley Farms",
+      "contact": "John Smith",
+      "phone": "+91-9876543210",
+      "email": "greenvalley@farm.com"
+    },
+    {
+      "name": "Fresh Harvest Co.",
+      "contact": "Mary Johnson",
+      "phone": "+91-9876543211",
+      "email": "freshharvest@farm.com"
+    }
+  ],
+  "fruits": [
+    {
+      "name": "Orchard Paradise",
+      "contact": "David Brown",
+      "phone": "+91-9876543212",
+      "email": "orchard@farm.com"
+    },
+    {
+      "name": "Fruit Kingdom",
+      "contact": "Sarah Wilson",
+      "phone": "+91-9876543213",
+      "email": "fruitking@farm.com"
+    }
+  ],
+  "flowers": [
+    {
+      "name": "Blooming Gardens",
+      "contact": "Emma Davis",
+      "phone": "+91-9876543214",
+      "email": "blooming@farm.com"
+    },
+    {
+      "name": "Petal Paradise",
+      "contact": "James Miller",
+      "phone": "+91-9876543215",
+      "email": "petals@farm.com"
+    }
+  ],
+  "dairy": [
+    {
+      "name": "Pure Milk Dairy",
+      "contact": "Robert Taylor",
+      "phone": "+91-9876543216",
+      "email": "puremilk@dairy.com"
+    },
+    {
+      "name": "Fresh Dairy Farms",
+      "contact": "Lisa Anderson",
+      "phone": "+91-9876543217",
+      "email": "freshdairy@farm.com"
+    }
+  ],
+  "poultry": [
+    {
+      "name": "Healthy Poultry Farm",
+      "contact": "Michael Thomas",
+      "phone": "+91-9876543218",
+      "email": "healthypoultry@farm.com"
+    },
+    {
+      "name": "Farm Fresh Eggs",
+      "contact": "Jennifer White",
+      "phone": "+91-9876543219",
+      "email": "freshegss@farm.com"
+    }
+  ]
+}

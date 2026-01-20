@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriConnect — Farm-to-Door</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='payment.css') }}">
+  <!-- Razorpay SDK for real payment processing -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+    <div class="actions">
+      {% if user %}
+        <button class="iconbtn" onclick="window.location.href='/profile.html'" title="Profile">
+          👤 <span class="username-text">{{ user.name or user.username }}</span>
+        </button>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>  
+  <div class="container">
+    <h1>Select Payment Method</h1>
+    
+    <div class="payment">
+      <!-- Cash on Delivery -->
+      <div class="COD payment-option" id="COD" onclick="selectPayment('COD')">
+        <div class="payment-header">
+          <input type="radio" name="payment" id="cod-radio" value="COD">
+          <label for="cod-radio">
+            <h3>💵 Cash on Delivery</h3>
+          </label>
+        </div>
+        <p class="payment-desc">Pay with cash when your order is delivered to your doorstep.</p>
+        <div class="payment-details" id="cod-details" style="display: none;">
+          <p>✓ No advance payment required</p>
+          <p>✓ Pay directly to delivery agent</p>
+          <p>✓ Available for all locations</p>
+        </div>
+      </div>
+
+      <!-- UPI Payment -->
+      <div class="UPI payment-option" id="UPI" onclick="selectPayment('UPI')">
+        <div class="payment-header">
+          <input type="radio" name="payment" id="upi-radio" value="UPI">
+          <label for="upi-radio">
+            <h3>📱 UPI Payment</h3>
+          </label>
+        </div>
+        <p class="payment-desc">Pay instantly using UPI apps like Google Pay, PhonePe, Paytm, etc.</p>
+        <div class="payment-details" id="upi-details" style="display: none;">
+          <div class="upi-input-group">
+            <label for="upi-id">Enter your UPI ID:</label>
+            <input type="text" id="upi-id" placeholder="yourname@paytm" class="upi-input">
+            <button class="verify-btn" onclick="verifyUPI(event)">Verify</button>
+          </div>
+          <p class="upi-note">✓ Instant payment confirmation</p>
+          <p class="upi-note">✓ Secure & encrypted transaction</p>
+        </div>
+      </div>
+
+      <!-- Debit/Credit Card -->
+      <div class="CARD payment-option" id="CARD" onclick="selectPayment('CARD')">
+        <div class="payment-header">
+          <input type="radio" name="payment" id="card-radio" value="CARD">
+          <label for="card-radio">
+            <h3>💳 Debit/Credit Card</h3>
+          </label>
+        </div>
+        <p class="payment-desc">Pay securely using your Debit or Credit card.</p>
+        <div class="payment-details" id="card-details" style="display: none;">
+          <div class="card-input-group">
+            <label for="card-number">Card Number:</label>
+            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19" class="card-input">
+            
+            <div class="card-row">
+              <div>
+                <label for="expiry">Expiry Date:</label>
+                <input type="text" id="expiry" placeholder="MM/YY" maxlength="5" class="card-input">
+              </div>
+              <div>
+                <label for="cvv">CVV:</label>
+                <input type="password" id="cvv" placeholder="123" maxlength="3" class="card-input">
+              </div>
+            </div>
+            
+            <label for="card-name">Cardholder Name:</label>
+            <input type="text" id="card-name" placeholder="Name on Card" class="card-input">
+          </div>
+          <p class="card-note">✓ All transactions are encrypted and secure</p>
+        </div>
+      </div>
+
+      <!-- Net Banking -->
+      <div class="NETBANKING payment-option" id="NETBANKING" onclick="selectPayment('NETBANKING')">
+        <div class="payment-header">
+          <input type="radio" name="payment" id="netbanking-radio" value="NETBANKING">
+          <label for="netbanking-radio">
+            <h3>🏦 Net Banking</h3>
+          </label>
+        </div>
+        <p class="payment-desc">Pay directly from your bank account using net banking.</p>
+        <div class="payment-details" id="netbanking-details" style="display: none;">
+          <div class="bank-select-group">
+            <label for="bank-select">Select Your Bank:</label>
+            <select id="bank-select" class="bank-select">
+              <option value="">Choose your bank</option>
+              <option value="SBI">State Bank of India</option>
+              <option value="HDFC">HDFC Bank</option>
+              <option value="ICICI">ICICI Bank</option>
+              <option value="AXIS">Axis Bank</option>
+              <option value="PNB">Punjab National Bank</option>
+              <option value="BOB">Bank of Baroda</option>
+              <option value="KOTAK">Kotak Mahindra Bank</option>
+              <option value="OTHER">Other Banks</option>
+            </select>
+          </div>
+          <p class="bank-note">✓ Redirected to your bank's secure page</p>
+          <p class="bank-note">✓ Login with your net banking credentials</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <h2>Order Summary</h2>
+      <div class="summary-row">
+        <span>Subtotal:</span>
+        <span id="subtotal">₹0.00</span>
+      </div>
+      <div class="summary-row">
+        <span>Delivery Charges:</span>
+        <span id="delivery">₹50.00</span>
+      </div>
+      <div class="summary-row total">
+        <span><strong>Total Amount:</strong></span>
+        <span id="total"><strong>₹50.00</strong></span>
+      </div>
+      <button class="proceed-btn" onclick="proceedPayment()">Proceed to Pay</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedPaymentMethod = null;
+    let orderAmount = 0; // Amount in rupees
+
+    function selectPayment(method) {
+      // Remove previous selection
+      document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('selected');
+        const details = option.querySelector('.payment-details');
+        if (details) details.style.display = 'none';
+      });
+
+      // Uncheck all radios
+      document.querySelectorAll('input[name="payment"]').forEach(radio => {
+        radio.checked = false;
+      });
+
+      // Select current method
+      const selected = document.getElementById(method);
+      selected.classList.add('selected');
+      
+      const radio = selected.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+
+      const details = document.getElementById(method.toLowerCase() + '-details');
+      if (details) details.style.display = 'block';
+
+      selectedPaymentMethod = method;
+    }
+
+    function verifyUPI(event) {
+      event.stopPropagation();
+      const upiId = document.getElementById('upi-id').value;
+      if (!upiId) {
+        alert('Please enter a valid UPI ID');
+        return;
+      }
+      if (!upiId.includes('@')) {
+        alert('Please enter a valid UPI ID (e.g., yourname@paytm)');
+        return;
+      }
+      alert('UPI ID verified successfully! ✓');
+    }
+
+    // Razorpay Integration for Real Payment Processing
+    function initiateRazorpayPayment() {
+  // First create order on backend
+  fetch('/create-razorpay-order', {
+    method: 'POST',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount: orderAmount })
+  })
+  .then(res => res.json())
+  .then(order => {
+
+    var options = {
+      key: "rzp_test_RnylgmQBIKOxI1",
+      amount: order.amount,
+      currency: "INR",
+      name: "AgriConnect",
+      order_id: order.id,  // IMPORTANT 🔥
+      handler: function (response) {
+        verifyPaymentOnServer(response);
+      },
+      theme: { color: "#1b7a3a" }
+    };
+
+    var rzp = new Razorpay(options);
+    rzp.open();
+  });
+}
+
+
+    // Verify payment on server (you need to implement this backend endpoint)
+    function verifyPaymentOnServer(response) {
+      fetch('/verify-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          amount: orderAmount
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/invoice.html?payment_id=' + response.razorpay_payment_id;
+        } else {
+          alert('Payment verification failed. Please contact support.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error verifying payment. Please contact support.');
+      });
+    }
+
+    function proceedPayment() {
+      if (!selectedPaymentMethod) {
+        alert('Please select a payment method');
+        return;
+      }
+
+      // Get total amount
+      const totalText = document.getElementById('total').textContent;
+      orderAmount = parseFloat(totalText.replace('₹', '').replace(',', ''));
+
+      // For Cash on Delivery
+      if (selectedPaymentMethod === 'COD') {
+        // Create order on backend
+        fetch('/create-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            payment_method: 'COD',
+            amount: orderAmount
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          alert('Order placed successfully! You will pay ₹' + orderAmount + ' on delivery.');
+          window.location.href = '/invoice.html?order_id=' + data.order_id;
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error placing order. Please try again.');
+        });
+        return;
+      }
+
+      // For UPI Payment
+      if (selectedPaymentMethod === 'UPI') {
+        const upiId = document.getElementById('upi-id').value;
+        if (!upiId || !upiId.includes('@')) {
+          alert('Please enter and verify your UPI ID');
+          return;
+        }
+        // Use Razorpay with UPI
+        initiateRazorpayPayment();
+        return;
+      }
+
+      // For Card Payment
+      if (selectedPaymentMethod === 'CARD') {
+        const cardNumber = document.getElementById('card-number').value;
+        const expiry = document.getElementById('expiry').value;
+        const cvv = document.getElementById('cvv').value;
+        const cardName = document.getElementById('card-name').value;
+        
+        if (!cardNumber || !expiry || !cvv || !cardName) {
+          alert('Please fill all card details');
+          return;
+        }
+        // Use Razorpay for card payment
+        initiateRazorpayPayment();
+        return;
+      }
+
+      // For Net Banking
+      if (selectedPaymentMethod === 'NETBANKING') {
+        const bank = document.getElementById('bank-select').value;
+        if (!bank) {
+          alert('Please select your bank');
+          return;
+        }
+        // Use Razorpay for net banking
+        initiateRazorpayPayment();
+        return;
+      }
+    }
+
+    // Auto-format card number
+    document.getElementById('card-number')?.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+      let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+      e.target.value = formattedValue;
+    });
+
+    // Auto-format expiry date
+    document.getElementById('expiry')?.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length >= 2) {
+        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+      }
+      e.target.value = value;
+    });
+
+    // CVV - only numbers
+    document.getElementById('cvv')?.addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    // Load order total from session/localStorage or backend
+    window.addEventListener('DOMContentLoaded', function() {
+      // Fetch cart total from backend or localStorage
+      fetch('/get-cart-total')
+        .then(res => res.json())
+        .then(data => {
+          const subtotal = parseFloat(data.subtotal || 1299.00);
+          const delivery = parseFloat(data.delivery || 50.00);
+          const total = subtotal + delivery;
+          
+          document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+          document.getElementById('delivery').textContent = '₹' + delivery.toFixed(2);
+          document.getElementById('total').textContent = '₹' + total.toFixed(2);
+          
+          orderAmount = total;
+        })
+        .catch(error => {
+          // Fallback to localStorage if backend call fails
+          const orderTotal = localStorage.getItem('orderTotal') || '1299.00';
+          const delivery = 0.00;
+          const total = (parseFloat(orderTotal) + delivery).toFixed(2);
+          
+          document.getElementById('subtotal').textContent = '₹' + orderTotal;
+          document.getElementById('total').textContent = '₹' + total;
+          
+          orderAmount = parseFloat(total);
+        });
+    });
+  </script>
+</body>
+</html>

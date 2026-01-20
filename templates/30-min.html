@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>30-Minute Delivery - AgriConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='home2.css') }}">
+  <style>
+    .fast-delivery-badge {
+      background: linear-gradient(135deg, #0b6 0%, #0a5 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 20px 0;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(0,187,102,0.3);
+    }
+    .no-products {
+      text-align: center;
+      padding: 60px 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin: 40px 0;
+    }
+    .no-products h3 {
+      color: #666;
+      margin-bottom: 12px;
+    }
+    .no-products p {
+      color: #999;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/'" title="Home">
+        🏠 Home
+      </button>
+      <button class="iconbtn" onclick="window.location.href='/farmers2.html'" title="All Products">
+        📦 All Products
+      </button>
+      <button class="iconbtn" onclick="window.location.href='/cart.html'" title="Cart">
+        🛒 Cart
+      </button>
+      {% if user %}
+        <span class="iconbtn" title="Logged in">👤 <span class="username-text">{{ user.name or user.username }}</span></span>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="container">
+    <div style="text-align: center; margin: 30px 0;">
+      <h2>🚀 30-Minute Delivery Products</h2>
+      {% if user and user.pincode %}
+        <div class="fast-delivery-badge">
+          📍 Your Pincode: {{ user.pincode }}
+        </div>
+        <p style="color: #666;">Showing products available for express delivery in your area</p>
+      {% else %}
+        <p style="color: #666; margin-top: 20px;">Please login and update your pincode to see fast delivery options</p>
+      {% endif %}
+    </div>
+
+    {% if user and user.pincode %}
+      <div class="section-head">
+        <h3>Available Now</h3>
+        <span class="meta" id="count"></span>
+      </div>
+
+      <section class="grid" id="grid"></section>
+
+      <div id="noProducts" class="no-products" style="display: none;">
+        <h3>😔 No products available for 30-minute delivery</h3>
+        <p>We don't have sellers in your pincode ({{ user.pincode }}) yet.</p>
+        <p>Check back soon or browse all products!</p>
+        <button class="btn" onclick="window.location.href='/farmers2.html'">Browse All Products</button>
+      </div>
+    {% else %}
+      <div class="no-products">
+        <h3>👋 Welcome!</h3>
+        <p>Login and update your delivery address with pincode to see products available for 30-minute delivery.</p>
+        <button class="btn" onclick="window.location.href='/login.html'">Login Now</button>
+      </div>
+    {% endif %}
+  </main>
+
+  <footer class="container" style="opacity:.7;font-size:13px;margin-top:40px">
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0">
+    <p>&copy; 2025 AgriConnect. All rights reserved.</p>
+  </footer>
+
+<script>
+const userPincode = "{{ user.pincode if user else '' }}";
+const source = "{{ source }}"; // 'home' or 'farmers'
+
+function currency(v){
+  const n = Number(v||0);
+  return isNaN(n) ? v : new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(n);
+}
+
+function productCard(p){
+  const div = document.createElement("article");
+  div.className = "card";
+  div.style.cursor = 'pointer';
+  div.addEventListener('click', () => { window.location.href = `/product/${p.id}`; });
+
+  div.innerHTML = `
+    <img class="thumb" src="${p.image || 'https://via.placeholder.com/600x450'}" alt="${p.name}"/>
+    <div class="card-body">
+      <div style="background:#0b6;color:white;padding:6px 10px;border-radius:4px;font-size:12px;font-weight:600;margin-bottom:8px;display:inline-block">🚀 30-Minute Delivery!</div>
+      <div class="name">${p.name}</div>
+      <div class="meta">by ${p.farmer} • ${p.location}</div>
+      <div class="row">
+        <div class="price">${currency(p.price)}</div>
+        <div class="meta">/ ${p.unit}</div>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="event.stopPropagation(); addToCart('${p.id}')">Add to Cart</button>
+      </div>
+    </div>`;
+  return div;
+}
+
+function addToCart(id){
+  try{
+    const prod = (window.__products_map && window.__products_map[id]) || (window.__products && window.__products.find(p=>String(p.id) === String(id)));
+    if(!prod){ alert('Product not found'); return; }
+
+    const raw = localStorage.getItem('cart') || '[]';
+    const cart = JSON.parse(raw);
+    const existing = cart.find(i => String(i.id) === String(prod.id));
+    if(existing){ existing.qty = (existing.qty || 1) + 1; }
+    else { cart.push(Object.assign({}, prod, { qty: 1 })); }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert(prod.name + ' added to cart');
+  }catch(e){
+    console.error('addToCart error', e);
+    alert('Could not add to cart');
+  }
+}
+
+function render(products){
+  const grid = document.getElementById("grid");
+  const noProducts = document.getElementById("noProducts");
+  
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (products.length === 0) {
+    if (noProducts) noProducts.style.display = 'block';
+    return;
+  }
+
+  if (noProducts) noProducts.style.display = 'none';
+  
+  products.forEach(p => {
+    grid.appendChild(productCard(p));
+  });
+
+  const countEl = document.getElementById("count");
+  if (countEl) {
+    countEl.textContent = `${products.length} items`;
+  }
+}
+
+async function loadProducts(){
+  if (!userPincode) return;
+  
+  try {
+    let apiUrl;
+    // Choose API based on source
+    if (source === 'farmers') {
+      apiUrl = "/api/products"; // farm_product.json
+    } else {
+      apiUrl = "/api/home-products"; // products.json
+    }
+    
+    const res = await fetch(apiUrl);
+    const allProducts = await res.json();
+    
+    // Filter products that match user's pincode
+    const matchingProducts = allProducts.filter(p => p.pincode && p.pincode === userPincode);
+    
+    // Store for cart functionality
+    window.__products = matchingProducts;
+    window.__products_map = {};
+    matchingProducts.forEach(p => { window.__products_map[p.id] = p; });
+    
+    render(matchingProducts);
+  } catch(err) {
+    console.error('Error loading products:', err);
+    const grid = document.getElementById("grid");
+    if (grid) {
+      grid.innerHTML = '<p style="color:#d00;text-align:center">Error loading products. Please try again.</p>';
+    }
+  }
+}
+
+// Load products on page load
+if (userPincode) {
+  loadProducts();
+}
+</script>
+</body>
+</html>

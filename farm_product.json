@@ -1,0 +1,156 @@
+[
+  {
+    "id": "T001",
+    "name": "Steel Harvesting Knife",
+    "price": 120,
+    "unit": "piece",
+    "farmer": "AgriTools Supply",
+    "location": "Hassan, Karnataka",
+    "image": "https://daitool.com/cdn/shop/files/Doukan-Carbon-Steel-Cabbage-Harvesting-Knife-With-Wooden-Sheath-135mm-2-2024-04-05T04_19_10.166Z.webp?v=1743438066&width=600",
+    "phone": "9876500001",
+    "pincode": "573201"
+  },
+  {
+    "id": "T002",
+    "name": "Hand Hoe (Koodli)",
+    "price": 250,
+    "unit": "piece",
+    "farmer": "Rural Tools Center",
+    "location": "Chitradurga, Karnataka",
+    "image": "data:image/jpeg;base64,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",
+    "phone": "9876500002",
+    "pincode": "577501"
+  },
+  {
+    "id": "P001",
+    "name": "Bayer Confidor Insecticide",
+    "price": 680,
+    "unit": "100 ml",
+    "farmer": "AgroChem Dealer",
+    "location": "Mandya, Karnataka",
+    "image": "data:image/webp;base64,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",
+    "phone": "9876500003",
+    "pincode": "571401"
+  },
+  {
+    "id": "P002",
+    "name": "Coragen Pesticide (DuPont)",
+    "price": 1850,
+    "unit": "150 ml",
+    "farmer": "Farm Science Center",
+    "location": "Shimoga, Karnataka",
+    "image": "data:image/jpeg;base64,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",
+    "phone": "9876500004",
+    "pincode": "577210"
+  },
+  {
+    "id": "F001",
+    "name": "Urea Fertilizer",
+    "price": 260,
+    "unit": "50 kg bag",
+    "farmer": "Krishi Kendra",
+    "location": "Tumkur, Karnataka",
+    "image": "https://gogarden.co.in/cdn/shop/files/71yg6hRnpTL._SL1200_fac2b8e7-208b-482d-9493-07d03daaff6f.jpg?v=1741858085",
+    "phone": "9876500005",
+    "pincode": "560008"
+  },
+  {
+    "id": "F002",
+    "name": "DAP Fertilizer (Diammonium Phosphate)",
+    "price": 1350,
+    "unit": "50 kg bag",
+    "farmer": "Farm Fertilizer Depot",
+    "location": "Davangere, Karnataka",
+    "image": "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcRbquYE9x6oJDq0lpyoFIMABh25I9DZV-klAFfdkIm3jfrdQnX9ZZy428HHB_BO7fIGt3DD8WQHLZ2mJjrrlTcnhhk9WMK471UbYjGY5A2MiCXKNI2n9rf7",
+    "phone": "9876500006",
+    "pincode": "577213"
+  },
+  {
+    "id": "F003",
+    "name": "Organic Vermicompost",
+    "price": 450,
+    "unit": "25 kg bag",
+    "farmer": "Eco Farms",
+    "location": "Coorg, Karnataka",
+    "image": "https://www.nationalgardens.in/271-large_default/vermicompost-for-better-plant-growth-organic-fertilizer.jpg",
+    "phone": "9876500007",
+    "pincode": 571201
+  },
+  {
+    "id": "S001",
+    "name": "Hybrid Tomato Seeds (Syngenta)",
+    "price": 150,
+    "unit": "10 g packet",
+    "farmer": "Seed Center",
+    "location": "Bengaluru, Karnataka",
+    "image": "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcTluY10rkFMXzYp19TGlX31W5XgDM0fffrZ5bkPo3Qs2UI-Gag_VPk4lAlhGCY1g60HAj1uPQWk7nYqc3w-MvYH_OM_o5YRVX8UhzP1ji4",
+    "phone": "9876500008",
+    "pincode": "560078"
+  },
+  {
+    "id": "S002",
+    "name": "Maize Hybrid Seeds",
+    "price": 1250,
+    "unit": "5 kg pack",
+    "farmer": "Agri Seeds House",
+    "location": "Hubli, Karnataka",
+    "image": "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcThsFzK04aPlp0uEURPRYNPX_2ZBZtUWrAJ9W6EZXs3vLzNKuJLNNw3WhNboFgVkLBboEj4-Nndw8WKu7UvN0itKSHicXGZVAr9dA_-itD7Z0ohiTDdGlqNtQ",
+    "phone": "9876500009",
+    "pincode": "580009"
+  },
+  {
+    "id": "T003",
+    "name": "Sprayer Pump (16L electric)",
+    "price": 1450,
+    "unit": "piece",
+    "farmer": "Farm Tools & Co",
+    "location": "Mysuru, Karnataka",
+    "image": "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcT9eQN3j_A1InYYCPKCHoctXgXGIVwz_jvrEAcRZSVCcgypM-aDFyJjxmkC42IMQ_aguxzh4uMo0ZsqNsSY1CWVYTyXKd7Ht_pkZVx3A6ZgGkzpgrRdiM2GzZA",
+    "phone": "9876500010",
+    "pincode": 570001
+  },
+  {
+    "id": "T004",
+    "name": "Electric Mini Tiller",
+    "price": 16500,
+    "unit": "piece",
+    "farmer": "Agro Machinery Mart",
+    "location": "Bengaluru, Karnataka",
+    "image": "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcSxbOfywegQDH7wrxFLmjCXJM74kbQ8Njv2ybq8yqeLjUo7hmQTThJQFE-4w518SltzDEpFEKeIBCHzfZZQ1Y-sVDY0b-kpUqwpSt2ObNX4",
+    "phone": "9876500011",
+    "pincode": "560061"
+  },
+  {
+    "id": "P003",
+    "name": "Fungicide — Mancozeb 75% WP",
+    "price": 230,
+    "unit": "500 g",
+    "farmer": "Agri Clinic",
+    "location": "Ballari, Karnataka",
+    "image": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcQOvB9yFAH1UvlHuFqxveWMTEyOuQwJ-KQnpsqNEafyVgBI-coRxDutHApJUwjOBK0TLqEmnHsjwhueUjVlW7jqH3MMbamQpkZKZl_b49jtQhThALi8iaKXkQ",
+    "phone": "9876500012",
+    "pincode": "583104"
+  },
+  {
+    "id": "F004",
+    "name": "NPK 19:19:19 Water Soluble Fertilizer",
+    "price": 900,
+    "unit": "5 kg bag",
+    "farmer": "Modern Krishi Store",
+    "location": "Bellary, Karnataka",
+    "image": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRiql8GjzcR1sGhdHb6FstWu8G0BF_2IXhXuUiqPNv4iKfS0j7Rbi9AbjpdqPJqucWeKL_oWQni0E90BPeiKbqWyAofJiSPsfgL77AAfwQWNLDzIelEmibuKA",
+    "phone": "9876500013",
+    "pincode": "583104"
+  },
+  {
+    "id": "T005",
+    "name": "Khurpi (Hand Weeder)",
+    "price": 80,
+    "unit": "piece",
+    "farmer": "Village Tool Shop",
+    "location": "Haveri, Karnataka",
+    "image": "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcS1J7eNV4MieNtEsll_7FRtb1eWOTsUPUyDHBveBC1ff0z3O_cJLw52YLZf09qnEq627HtgawXOKjbUGiqIGJ_DpxoscCoTXqMxsIIbDiyvuprPrsvrh7bLpA",
+    "phone": "9876500014",
+    "pincode": "581110"
+  }
+]

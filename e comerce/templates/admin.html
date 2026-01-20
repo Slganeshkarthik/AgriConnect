@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - AgriConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='home2.css') }}">
+  <style>
+    .admin-container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 24px;
+    }
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      flex: 1;
+      background: linear-gradient(135deg, #0b6 0%, #0a5 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .filter-bar {
+      background: white;
+      padding: 20px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .filter-bar label {
+      font-weight: 600;
+      color: #333;
+    }
+    .filter-bar select {
+      padding: 8px 16px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 200px;
+    }
+    .filter-bar select:focus {
+      outline: none;
+      border-color: #0b6;
+    }
+    .notification-badge {
+      background: #d00;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-left: 12px;
+    }
+    .pincode-section {
+      background: white;
+      padding: 24px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .pincode-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #0b6;
+      margin-bottom: 16px;
+    }
+    .pincode-header h2 {
+      margin: 0;
+      color: #0b6;
+    }
+    .order-count {
+      background: #f0f0f0;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .order-card {
+      background: #f9f9f9;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border-left: 4px solid #0b6;
+      transition: all 0.3s ease;
+    }
+    .order-card.pending {
+      border-left-color: #f90;
+      background: #fff9f0;
+    }
+    .order-card.completed {
+      border-left-color: #0b6;
+    }
+    .order-card.cancelled {
+      border-left-color: #d00;
+      background: #fff0f0;
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .order-number {
+      font-weight: 700;
+      font-size: 18px;
+      color: #333;
+    }
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-pending {
+      background: #f90;
+      color: white;
+    }
+    .status-completed {
+      background: #0b6;
+      color: white;
+    }
+    .status-cancelled {
+      background: #d00;
+      color: white;
+    }
+    .order-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .order-details p {
+      margin: 4px 0;
+      color: #666;
+    }
+    .order-details strong {
+      color: #333;
+    }
+    .order-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-complete {
+      background: #0b6;
+      color: white;
+    }
+    .btn-cancel {
+      background: #d00;
+      color: white;
+    }
+    .btn-complete:hover {
+      background: #0a5;
+    }
+    .btn-cancel:hover {
+      background: #c00;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect - Admin Panel</h1>
+    </div>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/'" title="Home">
+        🏠 Home
+      </button>
+      {% if user %}
+        <span class="iconbtn" title="Logged in">👤 <span class="username-text">{{ user.name or user.username }}</span></span>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <h1>Order Management
+      {% if pending_count > 0 %}
+        <span class="notification-badge"><span id="pendingBadge">{{ pending_count }}</span> New</span>
+      {% endif %}
+    </h1>
+
+    <!-- Statistics -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <h3>Total Orders</h3>
+        <div class="number" id="totalOrdersCount">{{ total_orders }}</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Orders</h3>
+        <div class="number" id="pendingOrdersCount">{{ pending_count }}</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pincodes</h3>
+        <div class="number">{{ orders_by_pincode|length }}</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <label for="pincodeFilter">Filter by Pincode:</label>
+      <select id="pincodeFilter" onchange="filterOrders()">
+        <option value="all">All Pincodes</option>
+        {% for pincode in orders_by_pincode.keys()|sort %}
+        <option value="{{ pincode }}">{{ pincode }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if orders_by_pincode %}
+      <!-- All orders in a single list -->
+      <div id="ordersContainer">
+      {% for pincode, orders in orders_by_pincode.items()|sort %}
+        {% for order in orders %}
+        <div class="order-card {{ order.status }}" data-pincode="{{ order.pincode or 'No Pincode' }}">
+          <div class="order-header">
+            <div class="order-number">#{{ order.order_number }}</div>
+            <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+          </div>
+
+          <div class="order-details">
+            <p><strong>Customer:</strong> {{ order.name }}</p>
+            <p><strong>Phone:</strong> {{ order.phone }}</p>
+            <p><strong>Address:</strong> {{ order.address }}</p>
+            <p><strong>Pincode:</strong> {{ order.pincode or 'N/A' }}</p>
+            <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+            <p><strong>Username:</strong> {{ order.username }}</p>
+            <p><strong>Date:</strong> {{ order.created_at }}</p>
+          </div>
+
+          <div class="order-actions">
+            <a href="/api/download-invoice/{{ order.id }}" target="_blank" 
+               class="btn-sm" 
+               style="background: #e3f2fd; color: #1976d2; text-decoration: none; display: inline-block;">
+              📄 Download Invoice
+            </a>
+            {% if order.status == 'pending' %}
+            <button class="btn-sm btn-complete" data-order-id="{{ order.id }}" data-status="completed">
+              ✓ Mark Complete
+            </button>
+            <button class="btn-sm btn-cancel" data-order-id="{{ order.id }}" data-status="cancelled">
+              ✗ Cancel Order
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="pincode-section" style="text-align:center;padding:40px">
+        <p style="color:#999;font-size:18px">No orders yet</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function filterOrders() {
+      const selectedPincode = document.getElementById('pincodeFilter').value;
+      const orderCards = document.querySelectorAll('.order-card');
+      
+      let visibleCount = 0;
+      let visiblePending = 0;
+      
+      orderCards.forEach(card => {
+        const cardPincode = card.getAttribute('data-pincode');
+        
+        if (selectedPincode === 'all' || cardPincode === selectedPincode) {
+          card.style.display = 'block';
+          visibleCount++;
+          
+          // Count pending orders in filtered view
+          if (card.classList.contains('pending')) {
+            visiblePending++;
+          }
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Update statistics
+      document.getElementById('totalOrdersCount').textContent = visibleCount;
+      document.getElementById('pendingOrdersCount').textContent = visiblePending;
+      
+      const badge = document.getElementById('pendingBadge');
+      if (badge) {
+        badge.textContent = visiblePending;
+      }
+    }
+
+    function updateOrderStatus(orderId, status) {
+      if (!confirm(`Are you sure you want to mark this order as ${status}?`)) {
+        return;
+      }
+
+      fetch('/api/update-order-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, status: status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('Error updating order status');
+        console.error(err);
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-order-id][data-status]');
+      if (!btn) return;
+      const orderId = parseInt(btn.getAttribute('data-order-id'), 10);
+      const status = btn.getAttribute('data-status');
+      if (!isNaN(orderId) && status) {
+        updateOrderStatus(orderId, status);
+      }
+    });
+  </script>
+</body>
+</html>

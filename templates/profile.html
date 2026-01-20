@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile - AgriConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='home2.css') }}">
+  <style>
+    .profile-container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 24px;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .profile-card {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .profile-card h2 {
+      margin-top: 0;
+      color: #0b6;
+      border-bottom: 2px solid #0b6;
+      padding-bottom: 12px;
+    }
+    .profile-info {
+      margin: 16px 0;
+    }
+    .profile-info p {
+      margin: 12px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .profile-info strong {
+      color: #333;
+      min-width: 120px;
+    }
+    .profile-info span {
+      color: #666;
+      flex: 1;
+      text-align: right;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .stat-box {
+      background: linear-gradient(135deg, #0b6 0%, #0a5 100%);
+      color: white;
+      padding: 16px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-box .number {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .stat-box .label {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+    .order-card {
+      background: #f9f9f9;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border-left: 4px solid #0b6;
+    }
+    .order-card.pending {
+      border-left-color: #f90;
+      background: #fff9f0;
+    }
+    .order-card.completed {
+      border-left-color: #0b6;
+    }
+    .order-card.cancelled {
+      border-left-color: #d00;
+      background: #fff0f0;
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .order-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .order-number {
+      font-weight: 700;
+      font-size: 16px;
+      color: #333;
+    }
+    .btn-download-invoice {
+      background: #e3f2fd;
+      color: #1976d2;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-download-invoice:hover {
+      background: #1976d2;
+      color: white;
+      transform: translateY(-2px);
+    }
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-pending {
+      background: #f90;
+      color: white;
+    }
+    .status-completed {
+      background: #0b6;
+      color: white;
+    }
+    .status-cancelled {
+      background: #d00;
+      color: white;
+    }
+    .order-details {
+      color: #666;
+      font-size: 14px;
+    }
+    .order-details p {
+      margin: 6px 0;
+    }
+    .edit-profile-btn {
+      background: #0b6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+      margin-top: 12px;
+    }
+    .edit-profile-btn:hover {
+      background: #0a5;
+    }
+    .profile-edit-form {
+      display: none;
+      margin-top: 16px;
+    }
+    .profile-edit-form.active {
+      display: block;
+    }
+    .profile-view.hidden {
+      display: none;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #333;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #0b6;
+    }
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .btn-save, .btn-cancel {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-save {
+      background: #0b6;
+      color: white;
+    }
+    .btn-save:hover {
+      background: #0a5;
+    }
+    .btn-cancel {
+      background: #f5f5f5;
+      color: #333;
+    }
+    .btn-cancel:hover {
+      background: #e5e5e5;
+    }
+    .no-orders {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    /* Role-specific styles */
+    .role-farmer {
+      color: #8B4513;
+      font-weight: 700;
+    }
+    .role-buyer {
+      color: #0b6;
+    }
+
+    /* Soil test booking styles */
+    .soil-test-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+    .soil-test-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-color: #8B4513;
+    }
+    .soil-test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      padding-bottom: 8px;
+    }
+    .soil-test-id {
+      font-weight: 700;
+      font-size: 15px;
+      color: #8B4513;
+    }
+    .soil-test-details {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .soil-test-details p {
+      margin: 4px 0;
+    }
+    .test-type-badge {
+      background: #f5f5dc;
+      color: #8B4513;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    /* Tab Navigation Styles */
+    .tab-navigation {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      bottom: -2px;
+    }
+    .tab-btn:hover {
+      color: #0b6;
+    }
+    .tab-btn.active {
+      color: #0b6;
+      border-bottom-color: #0b6;
+    }
+    .tab-btn.farmer-tab {
+      color: #666;
+    }
+    .tab-btn.farmer-tab:hover {
+      color: #8B4513;
+    }
+    .tab-btn.farmer-tab.active {
+      color: #8B4513;
+      border-bottom-color: #8B4513;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top head bar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"/>
+      <h1>AgriConnect</h1>
+    </div>
+
+    <div class="actions">
+      <button class="iconbtn" onclick="window.location.href='/'" title="Home">
+        🏠 Home
+      </button>
+      <button class="iconbtn" onclick="window.location.href='/cart.html'" title="Cart">
+        🛒 Cart
+      </button>
+      {% if user %}
+        <span class="iconbtn" title="Logged in">👤 <span class="username-text">{{ user.name or user.username }}</span></span>
+        <a class="iconbtn" href="/logout" title="Logout">↩ Logout</a>
+      {% else %}
+        <a class="iconbtn" href="/login.html" title="Login">👤 Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="profile-container">
+    {% if not user %}
+      <div class="profile-card" style="text-align: center;">
+        <h2>Please Login</h2>
+        <p style="color: #666; margin: 20px 0;">You need to login to view your profile</p>
+        <button class="btn" onclick="window.location.href='/login.html'">Login Now</button>
+      </div>
+    {% else %}
+      <h1>My Profile</h1>
+
+      <div class="profile-grid">
+        <!-- Profile Information -->
+        <div class="profile-card">
+          <h2>👤 Profile Details</h2>
+          <div class="profile-view" id="profileView">
+            <div class="profile-info">
+              {% if user.login_type %}
+              <p>
+                <strong>Account Type:</strong>
+                <span class="{% if user.login_type == 'farmer' %}role-farmer{% else %}role-buyer{% endif %}">
+                  {{ user.login_type.capitalize() }}
+                  {% if user.login_type == 'farmer' %}🌾{% endif %}
+                </span>
+              </p>
+              {% endif %}
+              <p>
+                <strong>Address:</strong>
+                <span>{{ user.address or 'Not set' }}</span>
+              </p>
+              <p>
+                <strong>Pincode:</strong>
+                <span>{{ user.pincode or 'Not set' }}</span>
+              </p>
+              <p>
+                <strong>Phone:</strong>
+                <span>{{ user.phone or 'Not set' }}</span>
+              </p>
+            </div>
+            <button class="edit-profile-btn" onclick="enableEdit()">
+              ✏️ Edit Profile
+            </button>
+          </div>
+
+          <div class="profile-edit-form" id="profileEditForm">
+            <div class="form-group">
+              <label for="editName">Name</label>
+              <input type="text" id="editName" value="{{ user.name or '' }}">
+            </div>
+            <div class="form-group">
+              <label for="editAddress">Address</label>
+              <input type="text" id="editAddress" value="{{ user.address or '' }}">
+            </div>
+            <div class="form-group">
+              <label for="editPincode">Pincode</label>
+              <input type="text" id="editPincode" value="{{ user.pincode or '' }}" maxlength="6">
+            </div>
+            <div class="form-group">
+              <label for="editPhone">Phone</label>
+              <input type="text" id="editPhone" value="{{ user.phone or '' }}" maxlength="10">
+            </div>
+            <div class="form-actions">
+              <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+              <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Statistics -->
+        <div class="profile-card">
+          <h2>📊 Order Statistics</h2>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="number">{{ total_orders }}</div>
+              <div class="label">Total Orders</div>
+            </div>
+            <div class="stat-box" style="background: linear-gradient(135deg, #f90 0%, #e80 100%);">
+              <div class="number">{{ pending_orders }}</div>
+              <div class="label">Pending</div>
+            </div>
+            <div class="stat-box" style="background: linear-gradient(135deg, #0b6 0%, #0a5 100%);">
+              <div class="number">{{ completed_orders }}</div>
+              <div class="label">Completed</div>
+            </div>
+          </div>
+          <div class="profile-info">
+            <p>
+              <strong>Total Spent:</strong>
+              <span>₹{{ "%.2f"|format(total_spent) }}</span>
+            </p>
+            <p>
+              <strong>Member Since:</strong>
+              <span>{{ member_since }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('orders')">📦 Order History</button>
+        {% if user.login_type == 'farmer' %}
+        <button class="tab-btn farmer-tab" onclick="switchTab('soil-tests')">🧪 Soil Test History</button>
+        {% endif %}
+      </div>
+
+      <!-- Orders Tab Content -->
+      <div id="orders-tab" class="tab-content active">
+        <!-- Order History -->
+        <div class="profile-card">
+          <h2>📦 Order History</h2>
+          {% if orders %}
+            {% for order in orders %}
+            <div class="order-card {{ order.status }}">
+              <div class="order-header">
+                <div class="order-number">#{{ order.order_number }}</div>
+                <div class="order-header-actions">
+                  <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+                  <a href="/api/download-invoice/{{ order.id }}" target="_blank" class="btn-download-invoice">
+                    📄 Invoice
+                  </a>
+                </div>
+              </div>
+              <div class="order-details">
+                <p><strong>Date:</strong> {{ order.created_at }}</p>
+                <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+                <p><strong>Payment:</strong> {{ order.payment_method or 'COD' }}</p>
+                {% if order.otp and (order.status == 'pending' or order.status == 'paid') %}
+                <p><strong>OTP:</strong> <span style="color: #0b6; font-weight: 700;">{{ order.otp }}</span> (Show to delivery agent)</p>
+                {% endif %}
+                {% if order.status == 'cancelled' and order.payment_method == 'Online' %}
+                <p style="color: #d00;"><strong>💰 Refund Status:</strong> Amount will be refunded within 2 business days</p>
+                {% endif %}
+                <p><strong>Delivery Address:</strong> {{ order.address }}, {{ order.pincode }}</p>
+                <p><strong>Items:</strong> {{ order.item_count }} product(s)</p>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="no-orders">
+              <h3>No orders yet</h3>
+              <p>Start shopping to see your orders here!</p>
+              <button class="btn" onclick="window.location.href='/'">Start Shopping</button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Soil Tests Tab Content (for farmers only) -->
+      {% if user.login_type == 'farmer' %}
+      <div id="soil-tests-tab" class="tab-content">
+        <div class="profile-card">
+          <h2>🧪 Soil Test History</h2>
+          {% if soil_tests %}
+            {% for test in soil_tests %}
+              <div class="soil-test-card">
+                <div class="soil-test-header">
+                  <span class="soil-test-id">📋 {{ test.booking_id }}</span>
+                  <span class="status-badge status-{{ test.status }}">{{ test.status }}</span>
+                </div>
+                <div class="soil-test-details">
+                  <p><strong>Test Type:</strong> <span class="test-type-badge">{{ test.test_type }}</span></p>
+                  <p><strong>Farm Location:</strong> {{ test.farm_location }}</p>
+                  <p><strong>Farm Size:</strong> {{ test.farm_size }} acres</p>
+                  <p><strong>Preferred Date:</strong> {{ test.preferred_date }}</p>
+                  <p><strong>Contact:</strong> {{ test.contact_number }}</p>
+                  <p><strong>Booked On:</strong> {{ test.created_at }}</p>
+                  {% if test.status == 'completed' %}
+                  <p style="margin-top: 12px;">
+                    <a href="/download-soil-report/{{ test.booking_id }}" class="btn-download-invoice" style="text-decoration: none;">
+                      📄 Download Report
+                    </a>
+                  </p>
+                  {% elif test.status == 'pending' %}
+                  <p style="color: #f90; margin-top: 8px; font-size: 13px;">
+                    ⏳ Your soil test is scheduled. We'll notify you when the report is ready.
+                  </p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="no-orders">
+              <h3>No soil tests booked yet</h3>
+              <p>Book a soil test to analyze your farm's soil quality!</p>
+              <button class="btn" onclick="window.location.href='/load-products'" style="background: #8B4513;">Book Soil Test</button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <footer class="container" style="opacity:.7;font-size:13px;margin-top:40px">
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0">
+    <p>&copy; 2025 AgriConnect. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function enableEdit() {
+      document.getElementById('profileView').classList.add('hidden');
+      document.getElementById('profileEditForm').classList.add('active');
+    }
+
+    function cancelEdit() {
+      document.getElementById('profileView').classList.remove('hidden');
+      document.getElementById('profileEditForm').classList.remove('active');
+    }
+
+    async function saveProfile() {
+      const name = document.getElementById('editName').value.trim();
+      const address = document.getElementById('editAddress').value.trim();
+      const pincode = document.getElementById('editPincode').value.trim();
+      const phone = document.getElementById('editPhone').value.trim();
+
+      // Validation
+      if (!name) {
+        alert('Please enter your name');
+        return;
+      }
+      if (!address) {
+        alert('Please enter your address');
+        return;
+      }
+      if (!pincode || !/^\d{6}$/.test(pincode)) {
+        alert('Please enter a valid 6-digit pincode');
+        return;
+      }
+      if (!phone || !/^\d{10}$/.test(phone)) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/update-user-details', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, address, pincode, phone })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('Profile updated successfully!');
+          // Reload the page to show updated info
+          window.location.reload();
+        } else {
+          alert(result.message || 'Failed to update profile');
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        alert('Failed to update profile. Please try again.');
+      }
+    }
+
+    // Tab switching functionality
+    function switchTab(tabName) {
+      // Hide all tab contents
+      const tabContents = document.querySelectorAll('.tab-content');
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      // Remove active class from all tab buttons
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Show selected tab content
+      const selectedTab = document.getElementById(tabName + '-tab');
+      if (selectedTab) {
+        selectedTab.classList.add('active');
+      }
+      
+      // Activate the clicked button
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
