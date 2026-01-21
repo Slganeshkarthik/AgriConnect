@@ -204,6 +204,25 @@ def init_db():
         )
     ''')
     
+    # Soil test reports table (stores analysis results)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS soil_test_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_id INTEGER NOT NULL,
+            ph_level REAL NOT NULL,
+            nitrogen REAL NOT NULL,
+            phosphorus REAL NOT NULL,
+            potassium REAL NOT NULL,
+            organic_carbon REAL,
+            electrical_conductivity REAL,
+            soil_texture TEXT,
+            moisture_content REAL,
+            recommendations TEXT,
+            completed_at TEXT,
+            FOREIGN KEY (booking_id) REFERENCES soil_test_bookings(id)
+        )
+    ''')
+    
     # Customer feedback table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS customer_feedback (
@@ -1296,16 +1315,10 @@ def update_order_status():
             except Exception as e:
                 print(f"Error updating stock in products.json: {e}")
             
-            # Update farmer notifications status
+            # Update farmer notifications status to completed (keep for earnings tracking)
             cur.execute(
                 'UPDATE farmer_order_notifications SET status = ? WHERE order_id = ?',
                 (status, order_id)
-            )
-
-            # Remove notifications after completion so they no longer appear for the farmer
-            cur.execute(
-                'DELETE FROM farmer_order_notifications WHERE order_id = ?',
-                (order_id,)
             )
         
         # If order is cancelled, update farmer notifications
@@ -1361,6 +1374,200 @@ def update_soil_test_status():
     except Exception as e:
         conn.close()
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/complete-soil-test', methods=['POST'])
+def complete_soil_test():
+    """Complete soil test with analysis results and generate report"""
+    if not session.get('username') or session.get('username') not in ['admin', 'admin2']:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    booking_id = data.get('booking_id')
+    
+    if not booking_id:
+        return jsonify({'success': False, 'message': 'Booking ID is required'}), 400
+    
+    # Extract soil test results
+    ph_level = data.get('ph_level')
+    nitrogen = data.get('nitrogen')
+    phosphorus = data.get('phosphorus')
+    potassium = data.get('potassium')
+    organic_carbon = data.get('organic_carbon')
+    electrical_conductivity = data.get('electrical_conductivity')
+    soil_texture = data.get('soil_texture')
+    moisture_content = data.get('moisture_content')
+    recommendations = data.get('recommendations', 'No specific recommendations')
+    
+    # Validate required fields
+    if not all([ph_level, nitrogen, phosphorus, potassium]):
+        return jsonify({'success': False, 'message': 'pH, Nitrogen, Phosphorus, and Potassium are required'}), 400
+    
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    
+    try:
+        # Get current time
+        date_str, time_str = get_current_time()
+        completed_at = f"{date_str} {time_str}"
+        
+        # Insert soil test report
+        cur.execute('''
+            INSERT INTO soil_test_reports 
+            (booking_id, ph_level, nitrogen, phosphorus, potassium, organic_carbon, 
+             electrical_conductivity, soil_texture, moisture_content, recommendations, completed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (booking_id, ph_level, nitrogen, phosphorus, potassium, organic_carbon,
+              electrical_conductivity, soil_texture, moisture_content, recommendations, completed_at))
+        
+        # Update booking status to completed
+        cur.execute('UPDATE soil_test_bookings SET status = ? WHERE id = ?', ('completed', booking_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Soil test completed successfully! Report has been generated.'
+        })
+    except Exception as e:
+        conn.close()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/download-soil-report/<booking_id>')
+def download_soil_report(booking_id):
+    """Generate and return soil test report as HTML (can be printed/saved as PDF)"""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    
+    try:
+        # Get booking details
+        cur.execute('''
+            SELECT b.id, b.booking_id, b.username, b.farm_location, b.farm_size, 
+                   b.contact_number, b.preferred_date, b.test_type, b.status, b.created_at
+            FROM soil_test_bookings b
+            WHERE b.booking_id = ?
+        ''', (booking_id,))
+        
+        booking = cur.fetchone()
+        if not booking:
+            conn.close()
+            return "Booking not found", 404
+        
+        # Get report data
+        cur.execute('''
+            SELECT ph_level, nitrogen, phosphorus, potassium, organic_carbon, 
+                   electrical_conductivity, soil_texture, moisture_content, recommendations, completed_at
+            FROM soil_test_reports 
+            WHERE booking_id = ?
+        ''', (booking[0],))
+        
+        report = cur.fetchone()
+        
+        # Get farmer name from user_details
+        cur.execute('SELECT name FROM user_details WHERE username = ?', (booking[2],))
+        farmer_row = cur.fetchone()
+        farmer_name = farmer_row[0] if farmer_row else booking[2]
+        
+        conn.close()
+        
+        if not report:
+            return "Report not yet generated", 404
+        
+        # Generate HTML report
+        report_html = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Soil Test Report - {booking_id}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: #2e7d32; color: white; padding: 20px; text-align: center; border-radius: 8px; }}
+                .header h1 {{ margin: 0; }}
+                .section {{ background: #f9f9f9; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #8B4513; }}
+                .section h3 {{ color: #8B4513; margin-top: 0; }}
+                .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }}
+                .field {{ padding: 8px; background: white; border-radius: 4px; }}
+                .field strong {{ color: #333; }}
+                .results-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }}
+                .result-card {{ background: white; padding: 15px; text-align: center; border-radius: 8px; border: 1px solid #ddd; }}
+                .result-card .value {{ font-size: 24px; font-weight: bold; color: #2e7d32; }}
+                .result-card .label {{ font-size: 12px; color: #666; }}
+                .recommendations {{ background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; }}
+                .footer {{ text-align: center; margin-top: 30px; padding-top: 15px; border-top: 2px solid #eee; color: #666; }}
+                @media print {{ body {{ margin: 0; }} .no-print {{ display: none; }} }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🌱 AgriConnect</h1>
+                <h2>Soil Test Analysis Report</h2>
+            </div>
+            
+            <div class="section">
+                <h3>📋 Booking Information</h3>
+                <div class="grid">
+                    <div class="field"><strong>Booking ID:</strong> {booking[1]}</div>
+                    <div class="field"><strong>Farmer:</strong> {farmer_name}</div>
+                    <div class="field"><strong>Test Type:</strong> {booking[7]}</div>
+                    <div class="field"><strong>Farm Location:</strong> {booking[3]}</div>
+                    <div class="field"><strong>Farm Size:</strong> {booking[4]} acres</div>
+                    <div class="field"><strong>Contact:</strong> {booking[5]}</div>
+                    <div class="field"><strong>Test Date:</strong> {report[9]}</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>🔬 Soil Analysis Results</h3>
+                <div class="results-grid">
+                    <div class="result-card">
+                        <div class="value">{report[0]}</div>
+                        <div class="label">pH Level</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="value">{report[1]}</div>
+                        <div class="label">Nitrogen (kg/ha)</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="value">{report[2]}</div>
+                        <div class="label">Phosphorus (kg/ha)</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="value">{report[3]}</div>
+                        <div class="label">Potassium (kg/ha)</div>
+                    </div>
+                </div>
+                
+                <div class="grid">
+                    <div class="field"><strong>Organic Carbon:</strong> {report[4] if report[4] else 'N/A'}%</div>
+                    <div class="field"><strong>Electrical Conductivity:</strong> {report[5] if report[5] else 'N/A'} dS/m</div>
+                    <div class="field"><strong>Soil Texture:</strong> {report[6] if report[6] else 'N/A'}</div>
+                    <div class="field"><strong>Moisture Content:</strong> {report[7] if report[7] else 'N/A'}%</div>
+                </div>
+            </div>
+            
+            <div class="recommendations">
+                <h3>📝 Recommendations</h3>
+                <p>{report[8].replace(chr(10), '<br>') if report[8] else 'No specific recommendations'}</p>
+            </div>
+            
+            <div class="footer">
+                <p><strong>AgriConnect - Connecting Farmers to Markets</strong></p>
+                <p>This report was generated on {report[9]}</p>
+                <button class="no-print" onclick="window.print()" style="padding: 10px 20px; background: #2e7d32; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    🖨️ Print / Save as PDF
+                </button>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        return report_html
+        
+    except Exception as e:
+        conn.close()
+        return f"Error generating report: {str(e)}", 500
 
 
 @app.route('/api/update-user-details', methods=['POST'])

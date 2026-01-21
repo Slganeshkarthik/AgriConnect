@@ -926,7 +926,8 @@
 
     // Update notification badge
     function updateNotificationBadge(notifications) {
-      const unreadCount = notifications.filter(n => n.read_status === 0).length;
+      // Only count unread notifications that are not completed or cancelled
+      const unreadCount = notifications.filter(n => n.read_status === 0 && n.status !== 'completed' && n.status !== 'cancelled').length;
       const badge = document.getElementById('notifBadge');
       badge.textContent = unreadCount;
       badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';

@@ -302,7 +302,7 @@
         <!-- <span class="price"><strong>${currency(p.price)}</strong></span> -->
         <!-- <div class="price" style="text-decoration: line-through; font-weight: normal;" >${currency(p.price)}</div>-->
         <!-- <span class="new-price"><strong>${currency(p.price / 2)}</strong></span>-->
-         ${p.new_price ?
+        ${p.new_price ?
         `<div class="price" style="text-decoration: line-through; font-weight: normal; color: #777; margin-right: 5px;" >${currency(p.price)}</div>
            <span class="new-price"><strong>${currency(p.new_price)}</strong></span>`
         :
@@ -453,5 +453,3 @@
 </script>
 
 </body>
-
-</html>
